@@ -1,0 +1,1323 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Content Machine</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Sans:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Space+Grotesk:wght@300;400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --bg:#0F1512;--s1:#141C1A;--s2:#1A2420;--border:rgba(255,255,255,.07);
+  --text:#F0EDE8;--muted:rgba(240,237,232,.45);--faint:rgba(240,237,232,.12);
+  --green:#2B5C56;--green2:#1C3D3A;--gold:#C4A882;--gold2:#A8895E;
+  --red:#B85C38;--purple:#7B5EA7;
+  --r:10px;--rl:16px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;font-size:15px}
+
+/* SIDEBAR */
+.sb{position:fixed;left:0;top:0;bottom:0;width:228px;background:var(--s1);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:100;overflow-y:auto}
+.sb-top{padding:18px 14px 14px;border-bottom:1px solid var(--border)}
+.sb-logo{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:500;letter-spacing:.05em}
+.sb-sub{font-size:8px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-top:2px;font-weight:300}
+.sb-brand{margin:8px 10px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:7px;padding:8px 11px;cursor:pointer;transition:all .15s}
+.sb-brand:hover{border-color:var(--green)}
+.sb-brand-name{font-size:12px;font-weight:500}
+.sb-brand-sub{font-size:10px;color:var(--muted);margin-top:1px}
+.sb-sec{padding:8px 8px 2px}
+.sb-lbl{font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:var(--faint);padding:0 7px;margin-bottom:2px}
+.nav{display:flex;align-items:center;gap:7px;padding:7px 9px;border-radius:6px;cursor:pointer;font-size:12px;color:var(--muted);transition:all .15s;line-height:1}
+.nav:hover{background:rgba(255,255,255,.05);color:var(--text)}
+.nav.active{background:rgba(196,168,130,.1);color:var(--gold)}
+.nav-ic{width:18px;text-align:center;font-size:12px;flex-shrink:0}
+.nav-b{margin-left:auto;font-size:8px;background:rgba(196,168,130,.18);color:var(--gold);padding:1px 5px;border-radius:10px}
+.sb-user{margin-top:auto;padding:10px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.sb-av{width:28px;height:28px;border-radius:50%;background:var(--green2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;flex-shrink:0}
+.sb-un{font-size:12px}
+.sb-out{font-size:10px;color:var(--muted);cursor:pointer;transition:color .15s}
+.sb-out:hover{color:var(--red)}
+
+/* MAIN */
+.main{margin-left:228px;min-height:100vh}
+.topbar{background:var(--s1);border-bottom:1px solid var(--border);padding:12px 26px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.tb-t{font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:400}
+.tb-obj{display:flex;align-items:center;gap:5px;font-size:10.5px;color:var(--green);background:rgba(43,92,86,.12);padding:5px 11px;border-radius:20px;cursor:pointer;border:1px solid rgba(43,92,86,.25);transition:all .15s}
+.tb-obj:hover{background:rgba(43,92,86,.2)}
+.tb-obj-dot{width:5px;height:5px;border-radius:50%;background:var(--green)}
+
+/* PAGES */
+.page{padding:26px;display:none;max-width:1400px}
+.page.active{display:block}
+.ph{margin-bottom:20px}
+.ph h1{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:400;line-height:1.2}
+.ph p{font-size:12.5px;color:var(--muted);margin-top:5px;font-weight:300;line-height:1.7;max-width:540px}
+
+/* CARDS */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:18px}
+.card{background:var(--s2);border:1px solid var(--border);border-radius:var(--r);padding:16px;cursor:pointer;transition:all .15s;position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--gold);opacity:0;transition:.15s}
+.card:hover{border-color:var(--green);transform:translateY(-1px)}
+.card:hover::before{opacity:1}
+.c-ic{font-size:16px;margin-bottom:7px}
+.c-t{font-size:13px;font-weight:500;margin-bottom:3px}
+.c-d{font-size:11.5px;color:var(--muted);line-height:1.5;font-weight:300}
+.c-tag{display:inline-block;margin-top:7px;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--green);background:rgba(43,92,86,.15);padding:2px 7px;border-radius:20px}
+
+/* PANEL */
+.panel{background:var(--s2);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden;margin-bottom:14px}
+.ph2{padding:14px 20px;border-bottom:1px solid var(--border);background:rgba(0,0,0,.12);display:flex;align-items:center;justify-content:space-between}
+.ph2-t{font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:400}
+.pb{padding:18px 20px}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:11px}
+.r1{margin-bottom:11px}
+.lbl{display:block;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:5px;font-weight:400}
+input[type=text],input[type=email],input[type=password],select,textarea{width:100%;padding:9px 12px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:6px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);outline:none;transition:border-color .15s;font-weight:300}
+input:focus,select:focus,textarea:focus{border-color:rgba(43,92,86,.7);background:rgba(255,255,255,.06)}
+input::placeholder,textarea::placeholder{color:rgba(255,255,255,.18)}
+select option{background:var(--s2)}
+textarea{resize:vertical;min-height:76px;line-height:1.6}
+.btn-row{display:flex;gap:8px;margin-top:13px;flex-wrap:wrap;align-items:center}
+.btn{padding:9px 19px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;border:none;transition:all .15s;display:inline-flex;align-items:center;gap:5px}
+.btn-p{background:var(--green);color:var(--text)}.btn-p:hover{background:var(--green2)}
+.btn-g{background:rgba(43,92,86,.25);color:var(--text);border:1px solid rgba(43,92,86,.4)}.btn-g:hover{background:rgba(43,92,86,.4)}
+.btn-o{background:transparent;color:var(--text);border:1px solid var(--border)}.btn-o:hover{border-color:rgba(255,255,255,.3)}
+.btn-gold{background:var(--gold);color:#0D2422}.btn-gold:hover{background:var(--gold2)}
+.btn-sm{padding:6px 12px;font-size:11px}
+
+/* OUTPUT */
+.out{background:var(--s2);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden;display:none}
+.out.vis{display:block}
+.out-hd{padding:11px 17px;border-bottom:1px solid var(--border);background:rgba(0,0,0,.12);display:flex;align-items:center;justify-content:space-between}
+.out-lbl{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--green)}
+.out-body{padding:20px;font-size:13.5px;line-height:1.85;white-space:pre-wrap;font-weight:300;max-height:520px;overflow-y:auto}
+.loading{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--muted);font-style:italic}
+.dots span{display:inline-block;width:4px;height:4px;border-radius:50%;background:var(--green);animation:pulse 1.2s infinite}
+.dots span:nth-child(2){animation-delay:.2s}.dots span:nth-child(3){animation-delay:.4s}
+@keyframes pulse{0%,80%,100%{opacity:.3;transform:scale(.8)}40%{opacity:1;transform:scale(1)}}
+
+/* TEMAS */
+.temas-block{background:var(--s2);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden;margin-bottom:14px}
+.tb-hd{padding:12px 18px;border-bottom:1px solid var(--border);background:rgba(0,0,0,.12);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.tb-hd-t{font-size:12px;color:var(--muted);font-weight:300}
+.tb-hd-t strong{color:var(--text);font-weight:500}
+.tb-body{padding:14px 18px}
+.tema-item{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:7px;padding:10px 12px;margin-bottom:6px;display:flex;gap:9px;align-items:flex-start;transition:border-color .15s}
+.tema-item:hover{border-color:rgba(43,92,86,.4)}
+.tema-info{flex:1}
+.tema-title{font-size:12.5px;font-weight:400;line-height:1.4;margin-bottom:2px}
+.tema-hook{font-size:11px;color:var(--muted);font-style:italic}
+.tema-actions{display:flex;gap:5px;flex-shrink:0;margin-top:1px}
+.tema-use{font-size:9.5px;color:var(--green);padding:3px 7px;border:1px solid rgba(43,92,86,.4);border-radius:20px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.tema-use:hover{background:var(--green);color:var(--text)}
+.tema-fav{font-size:13px;color:var(--faint);cursor:pointer;transition:color .15s;padding:2px}
+.tema-fav:hover,.tema-fav.saved{color:var(--gold)}
+.temas-empty{font-size:12px;color:var(--muted);font-weight:300;padding:2px 0}
+
+/* DASHBOARD */
+.dash-stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:20px}
+.stat-c{background:var(--s2);border:1px solid var(--border);border-radius:var(--r);padding:16px}
+.stat-n{font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:300}
+.stat-l{font-size:10.5px;color:var(--muted);margin-top:2px;font-weight:300}
+.qa-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:9px;margin-bottom:20px}
+.qa-c{background:var(--s2);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;cursor:pointer;transition:all .15s}
+.qa-c:hover{border-color:var(--green);transform:translateY(-1px)}
+.qa-ic{font-size:20px;margin-bottom:6px}
+.qa-t{font-size:12.5px;font-weight:500}
+.qa-d{font-size:10.5px;color:var(--muted);margin-top:2px;font-weight:300}
+
+/* HIST */
+.hist-item{background:var(--s2);border:1px solid var(--border);border-radius:var(--r);padding:12px 16px;margin-bottom:7px;cursor:pointer;transition:all .15s}
+.hist-item:hover{border-color:rgba(43,92,86,.4)}
+.hist-type{font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--green);margin-bottom:3px}
+.hist-tema{font-size:13px;font-weight:400;margin-bottom:3px}
+.hist-prev{font-size:11.5px;color:var(--muted);font-weight:300;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.hist-date{font-size:10px;color:var(--faint);margin-top:5px}
+
+/* FASE */
+.fase-seq{display:flex;gap:0;margin-bottom:16px;overflow-x:auto}
+.fase-s{flex:1;min-width:90px;padding:10px 13px;background:var(--s2);border:1px solid var(--border);border-right:none;cursor:pointer;transition:all .15s}
+.fase-s:first-child{border-radius:7px 0 0 7px}
+.fase-s:last-child{border-radius:0 7px 7px 0;border-right:1px solid var(--border)}
+.fase-s:hover{background:rgba(255,255,255,.04)}
+.fase-s.af{background:rgba(43,92,86,.18);border-color:var(--green)}
+.fn{font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:300}
+.fm{font-size:8.5px;color:var(--muted);margin-top:1px}
+
+/* DESAFIOS */
+.proto-hd{background:linear-gradient(135deg,var(--green),var(--green2));border-radius:8px;padding:16px 20px;margin-bottom:12px}
+.proto-hd h2{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:300;margin-bottom:3px}
+.proto-hd p{font-size:11px;opacity:.65;font-weight:300;line-height:1.6}
+.slbl{font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:var(--green);margin:14px 0 6px}
+.dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:7px;margin-bottom:10px}
+.ditem{background:var(--s2);border:1px solid var(--border);border-radius:7px;padding:10px 12px;cursor:pointer;transition:all .15s}
+.ditem:hover{border-color:rgba(43,92,86,.4);background:rgba(43,92,86,.05)}
+.ditem-n{font-size:10px;color:var(--gold);margin-bottom:2px}
+.ditem-o{font-size:12px;font-weight:500;margin-bottom:2px}
+.ditem-d{font-size:10.5px;color:var(--muted);font-weight:300;line-height:1.4}
+
+/* TABS */
+.dtabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.dtab{padding:6px 14px;border-radius:25px;font-size:11.5px;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);transition:all .15s}
+.dtab:hover{color:var(--text);border-color:rgba(255,255,255,.2)}
+.dtab.active{background:var(--green2);color:var(--text);border-color:var(--green)}
+.dp{display:none}.dp.active{display:block}
+
+/* NARRATIVAS */
+.nc{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.nc-item{padding:6px 14px;border-radius:25px;font-size:11.5px;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);transition:all .15s}
+.nc-item:hover{color:var(--text)}
+.nc-item.active{background:var(--green2);color:var(--text);border-color:var(--green)}
+.ncard{background:var(--s2);border:1px solid var(--border);border-radius:var(--r);margin-bottom:7px;overflow:hidden;transition:border-color .15s}
+.ncard:hover{border-color:rgba(43,92,86,.4)}
+.ncard-hd{padding:12px 16px;background:rgba(0,0,0,.12);display:flex;align-items:center;justify-content:space-between;cursor:pointer}
+.ncard-t{font-size:13px;font-weight:500}
+.ncard-tag{font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);background:rgba(196,168,130,.1);padding:2px 8px;border-radius:20px}
+.ncard-b{padding:0 16px;font-size:12px;color:var(--muted);line-height:1.7;font-weight:300;max-height:0;overflow:hidden;transition:max-height .3s ease}
+.ncard.open .ncard-b{max-height:400px;padding:12px 16px}
+.nbtn{display:block;width:100%;padding:8px;background:rgba(43,92,86,.1);border:none;font-family:'DM Sans',sans-serif;font-size:11px;color:var(--green);cursor:pointer;transition:all .15s;margin-top:9px;border-radius:5px}
+.nbtn:hover{background:rgba(43,92,86,.2)}
+
+/* 60 IDEAS */
+.bc-cats{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.bc-cat{padding:5px 13px;border-radius:20px;font-size:11px;cursor:pointer;border:1px solid;transition:all .15s;font-weight:300}
+.bc-cat.edu{border-color:var(--green);color:var(--green)}.bc-cat.edu.s,.bc-cat.edu:hover{background:var(--green);color:var(--text)}
+.bc-cat.ativ{border-color:var(--purple);color:var(--purple)}.bc-cat.ativ.s,.bc-cat.ativ:hover{background:var(--purple);color:var(--text)}
+.bc-cat.asp{border-color:var(--gold);color:var(--gold)}.bc-cat.asp.s,.bc-cat.asp:hover{background:var(--gold);color:#0D2422}
+.bc-cat.conv{border-color:var(--red);color:var(--red)}.bc-cat.conv.s,.bc-cat.conv:hover{background:var(--red);color:var(--text)}
+.iitem{background:var(--s2);border:1px solid var(--border);border-radius:7px;padding:10px 14px;margin-bottom:5px;cursor:pointer;display:flex;gap:10px;align-items:flex-start;transition:all .15s}
+.iitem:hover{border-color:rgba(43,92,86,.4);background:rgba(43,92,86,.04)}
+.iitem-n{font-size:8.5px;letter-spacing:.1em;background:rgba(43,92,86,.15);color:var(--green);padding:2px 7px;border-radius:20px;white-space:nowrap;margin-top:2px}
+.iitem-t{font-size:12.5px;color:var(--text);font-weight:300}
+
+/* FUNIL */
+.funil-v{max-width:440px;margin:0 auto 24px;display:flex;flex-direction:column;gap:2px}
+.fs-f{padding:13px 18px;text-align:center;cursor:pointer;border:1px solid var(--border);background:var(--s2);transition:all .15s}
+.fs-f:first-child{border-radius:9px 9px 0 0;clip-path:polygon(4% 0,96% 0,100% 100%,0 100%)}
+.fs-f:nth-child(2){clip-path:polygon(3% 0,97% 0,93% 100%,7% 100%)}
+.fs-f:nth-child(3){clip-path:polygon(7% 0,93% 0,87% 100%,13% 100%)}
+.fs-f:last-child{border-radius:0 0 9px 9px;clip-path:polygon(13% 0,87% 0,79% 100%,21% 100%)}
+.fs-f:hover,.fs-f.af{border-color:var(--gold);background:rgba(196,168,130,.05)}
+.fs-f-lbl{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--green);margin-bottom:2px}
+.fs-f-t{font-family:'Cormorant Garamond',serif;font-size:15px;font-weight:400}
+.fs-f-d{font-size:10.5px;color:var(--muted);font-weight:300;margin-top:1px}
+.funil-info{background:rgba(196,168,130,.07);border:1px solid rgba(196,168,130,.15);border-radius:8px;padding:13px 16px;margin-bottom:14px;font-size:12px;color:var(--muted);font-weight:300;line-height:1.7;display:none}
+.funil-info.vis{display:block}
+
+/* LAYOUT BUILDER */
+.builder{display:grid;grid-template-columns:260px 1fr 280px;height:calc(100vh - 53px);margin:-26px;background:var(--bg)}
+.bl-l{border-right:1px solid var(--border);overflow-y:auto;background:var(--s1)}
+.bl-c{display:flex;flex-direction:column;overflow:hidden;background:#090D0C}
+.bl-r{border-left:1px solid var(--border);overflow-y:auto;background:var(--s1)}
+.bl-sec{border-bottom:1px solid var(--border)}
+.bl-sec-hd{padding:11px 14px;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);cursor:pointer;display:flex;align-items:center;justify-content:space-between}
+.bl-sec-hd:hover{background:rgba(255,255,255,.03)}
+.bl-sec-hd::after{content:'+';color:var(--muted)}
+.bl-sec.open .bl-sec-hd::after{content:'−'}
+.bl-sec-body{padding:11px 13px;display:none}
+.bl-sec.open .bl-sec-body{display:block}
+.bl-lbl{font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;display:block;margin-top:8px}
+.bl-lbl:first-child{margin-top:0}
+.bl-inp{width:100%;padding:7px 9px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:5px;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text);outline:none;transition:border-color .15s;margin-bottom:8px}
+.bl-inp:focus{border-color:rgba(43,92,86,.7)}
+.bl-inp::placeholder{color:rgba(255,255,255,.15)}
+.c-pair{display:flex;gap:5px;align-items:center;margin-bottom:8px}
+.c-sw{width:34px;height:30px;border-radius:5px;border:1px solid var(--border);cursor:pointer;padding:2px;background:none;flex-shrink:0}
+.style-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:8px}
+.style-opt{padding:7px 6px;border-radius:5px;border:1px solid var(--border);cursor:pointer;transition:all .15s;background:rgba(255,255,255,.03);text-align:center;font-size:10px;color:var(--muted)}
+.style-opt:hover,.style-opt.active{border-color:var(--green);color:var(--text);background:rgba(43,92,86,.12)}
+.style-prev{font-size:16px;margin-bottom:3px;line-height:1}
+.font-opt{padding:6px 9px;border-radius:5px;border:1px solid var(--border);cursor:pointer;transition:all .15s;margin-bottom:5px;background:rgba(255,255,255,.03)}
+.font-opt:hover,.font-opt.active{border-color:var(--green);background:rgba(43,92,86,.1)}
+.font-opt-n{font-size:11.5px}
+.font-opt-p{font-size:15px;color:var(--muted);margin-top:1px}
+.tex-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:8px}
+.tex-opt{aspect-ratio:1;border-radius:5px;border:2px solid transparent;cursor:pointer;transition:all .15s}
+.tex-opt:hover,.tex-opt.active{border-color:var(--green)}
+.ratio-tabs{display:flex;gap:0;border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-bottom:8px}
+.ratio-tab{flex:1;padding:6px;text-align:center;font-size:10.5px;cursor:pointer;transition:all .15s;color:var(--muted)}
+.ratio-tab.active{background:var(--green);color:var(--text)}
+.bl-canvas{flex:1;display:flex;align-items:center;justify-content:center;overflow:auto;padding:28px}
+.strip{background:var(--s2);border-top:1px solid var(--border);padding:12px 18px;display:flex;gap:9px;align-items:center;overflow-x:auto;min-height:88px}
+.strip-item{flex-shrink:0;width:58px;height:58px;border-radius:6px;overflow:hidden;cursor:pointer;border:2px solid transparent;transition:border-color .15s;background:#000;position:relative}
+.strip-item.active{border-color:var(--green)}
+.strip-item canvas{width:100%;height:100%;object-fit:cover}
+.strip-add{width:58px;height:58px;border-radius:6px;border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:20px;color:var(--muted);transition:all .15s}
+.strip-add:hover{border-color:var(--green);color:var(--text)}
+.bl-r-hd{padding:12px 14px;border-bottom:1px solid var(--border)}
+.bl-ta{width:100%;padding:8px 10px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:6px;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text);outline:none;resize:vertical;line-height:1.6;transition:border-color .15s;margin-bottom:8px}
+.bl-ta:focus{border-color:rgba(43,92,86,.7)}
+.bl-ta::placeholder{color:rgba(255,255,255,.15)}
+.sz-row{display:flex;gap:5px;align-items:center;margin-bottom:8px}
+.sz-btn{width:28px;height:28px;border-radius:4px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--text);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.sz-btn:hover{border-color:var(--green)}
+.pos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;margin-bottom:8px}
+.pos-btn{aspect-ratio:1;border-radius:4px;border:1px solid var(--border);background:rgba(255,255,255,.03);cursor:pointer;transition:all .15s;font-size:11px;color:var(--muted);display:flex;align-items:center;justify-content:center}
+.pos-btn:hover,.pos-btn.active{border-color:var(--green);background:rgba(43,92,86,.12);color:var(--text)}
+.foto-drop-bl{border:1px dashed var(--border);border-radius:6px;padding:9px;text-align:center;cursor:pointer;font-size:11px;color:var(--muted);margin-bottom:8px;transition:all .15s}
+.foto-drop-bl:hover{border-color:var(--green);color:var(--text)}
+.exp-btns{padding:12px}
+.exp-btn{width:100%;padding:10px;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:12.5px;cursor:pointer;border:none;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:7px}
+.exp-all{background:var(--green);color:var(--text)}.exp-all:hover{background:var(--green2)}
+.exp-one{background:rgba(255,255,255,.06);color:var(--text);border:1px solid var(--border)}.exp-one:hover{border-color:var(--green)}
+
+/* MARCA SETUP */
+.onb-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:300;margin-bottom:5px}
+.onb-desc{font-size:12.5px;color:var(--muted);margin-bottom:20px;font-weight:300;line-height:1.7}
+.prog{height:2px;background:rgba(255,255,255,.07);border-radius:1px;margin-bottom:24px}
+.prog-fill{height:100%;background:var(--green);border-radius:1px;transition:width .4s ease}
+.upload-a{border:2px dashed var(--border);border-radius:var(--r);padding:28px;text-align:center;cursor:pointer;transition:all .15s;background:rgba(255,255,255,.02)}
+.upload-a:hover,.upload-a.drag{border-color:var(--green);background:rgba(43,92,86,.04)}
+
+/* MODAL */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;align-items:center;justify-content:center;display:none;backdrop-filter:blur(3px)}
+.modal.open{display:flex}
+.modal-box{background:var(--s1);border:1px solid var(--border);border-radius:var(--rl);padding:26px;width:90%;max-width:500px;max-height:90vh;overflow-y:auto}
+.modal-t{font-family:'Cormorant Garamond',serif;font-size:21px;font-weight:400;margin-bottom:16px}
+
+/* TOAST */
+.toast{position:fixed;bottom:18px;right:18px;background:var(--s1);border:1px solid var(--border);color:var(--text);padding:11px 16px;border-radius:8px;font-size:12px;font-weight:300;opacity:0;transform:translateY(5px);transition:all .25s;pointer-events:none;z-index:999}
+.toast.show{opacity:1;transform:translateY(0)}
+
+hr{border:none;border-top:1px solid var(--border);margin:16px 0}
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px}
+
+/* MOBILE */
+@media(max-width:768px){
+  .sb{transform:translateX(-100%);transition:transform .25s;z-index:200}
+  .sb.open{transform:translateX(0)}
+  .main{margin-left:0}
+  .topbar{padding:10px 16px}
+  .page{padding:16px}
+  .r2{grid-template-columns:1fr}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
+  .builder{grid-template-columns:1fr;height:auto}
+  .bl-l,.bl-r{display:none}
+  .bl-c{height:70vw;min-height:300px}
+  .strip{min-height:70px}
+  .mob-menu-btn{display:flex!important}
+  .dash-stats{grid-template-columns:1fr 1fr}
+  .qa-grid{grid-template-columns:1fr 1fr}
+  .funil-v{max-width:100%}
+  .fase-seq .fase-s{min-width:70px;padding:8px 10px}
+  .dgrid{grid-template-columns:1fr 1fr}
+  .modal-box{padding:20px;margin:16px}
+}
+.mob-menu-btn{display:none;position:fixed;top:12px;left:12px;z-index:201;background:var(--s1);border:1px solid var(--border);border-radius:8px;padding:8px 10px;cursor:pointer;font-size:16px}
+.sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:199}
+.sb-overlay.open{display:block}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sb">
+  <div class="sb-top">
+    <div class="sb-logo">Content Machine</div>
+    <div class="sb-sub">Máquina de Conteúdo · AI</div>
+  </div>
+  <div class="sb-brand" onclick="openBrandModal()">
+    <div class="sb-brand-name" id="sb-bn">Seleccionar marca</div>
+    <div class="sb-brand-sub" id="sb-bs">Carrega o teu briefing</div>
+  </div>
+  <div class="sb-sec">
+    <div class="sb-lbl">Início</div>
+    <div class="nav active" onclick="go('dash')"><div class="nav-ic">◈</div>Dashboard</div>
+    <div class="nav" onclick="go('marca')"><div class="nav-ic">◎</div>Configurar Marca</div>
+    <div class="nav" onclick="go('hist')"><div class="nav-ic">⊟</div>Histórico <span class="nav-b" id="h-badge">0</span></div>
+    <div class="nav" onclick="go('favs')"><div class="nav-ic">♡</div>Favoritos <span class="nav-b" id="f-badge">0</span></div>
+  </div>
+  <div class="sb-sec">
+    <div class="sb-lbl">Criar Conteúdo</div>
+    <div class="nav" onclick="go('post')"><div class="nav-ic">◻</div>Post Instagram</div>
+    <div class="nav" onclick="go('stories')"><div class="nav-ic">◑</div>Stories</div>
+    <div class="nav" onclick="go('carrossel')"><div class="nav-ic">⊞</div>Carrossel</div>
+    <div class="nav" onclick="go('reel')"><div class="nav-ic">▶</div>Reel</div>
+    <div class="nav" onclick="go('newsletter')"><div class="nav-ic">✉</div>Newsletter</div>
+    <div class="nav" onclick="go('formatos')"><div class="nav-ic">✦</div>Formatos Criativos</div>
+  </div>
+  <div class="sb-sec">
+    <div class="sb-lbl">Estratégia</div>
+    <div class="nav" onclick="go('retorno')"><div class="nav-ic">⚡</div>Plano de Retorno</div>
+    <div class="nav" onclick="go('desafios')"><div class="nav-ic">◬</div>Desafios</div>
+    <div class="nav" onclick="go('narrativas')"><div class="nav-ic">◈</div>Narrativas</div>
+    <div class="nav" onclick="go('sessenta')"><div class="nav-ic">✦</div>60 Ideias</div>
+    <div class="nav" onclick="go('funil')"><div class="nav-ic">▽</div>Funil</div>
+    <div class="nav" onclick="go('plano')"><div class="nav-ic">📅</div>Plano Editorial</div>
+  </div>
+  <div class="sb-sec">
+    <div class="sb-lbl">Visual</div>
+    <div class="nav" onclick="go('builder')"><div class="nav-ic">🖼</div>Layout Builder</div>
+  </div>
+  <div class="sb-user">
+    <div class="sb-av" id="sb-av">?</div>
+    <div>
+      <div class="sb-un" id="sb-un">Utilizador</div>
+      <div class="sb-out" onclick="doLogout()">Terminar sessão</div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="tb-t" id="tb-t">Dashboard</div>
+    <div class="tb-obj" onclick="openModal('obj')">
+      <div class="tb-obj-dot"></div>
+      <span id="tb-obj-txt">Definir objectivo →</span>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="page active" id="pg-dash">
+    <div class="ph"><h1 id="dash-greet">Bem-vindo.</h1><p>O teu espaço de criação de conteúdo. Tudo adaptado à tua marca.</p></div>
+    <div id="dash-alert" style="background:rgba(196,168,130,.07);border:1px solid rgba(196,168,130,.18);border-radius:9px;padding:14px 18px;margin-bottom:18px;display:none">
+      <div style="font-size:13px;font-weight:500;margin-bottom:3px">Configura a tua marca primeiro</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px;font-weight:300">Carrega o teu briefing para que toda a IA gere conteúdo específico para o teu nicho.</div>
+      <button class="btn btn-gold btn-sm" onclick="go('marca')">Configurar marca →</button>
+    </div>
+    <div class="dash-stats" id="dash-stats"></div>
+    <div style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:12px">Acções rápidas</div>
+    <div class="qa-grid">
+      <div class="qa-c" onclick="go('post')"><div class="qa-ic">◻</div><div class="qa-t">Post Instagram</div><div class="qa-d">Legenda completa</div></div>
+      <div class="qa-c" onclick="go('stories')"><div class="qa-ic">◑</div><div class="qa-t">Stories</div><div class="qa-d">7 slides completos</div></div>
+      <div class="qa-c" onclick="go('carrossel')"><div class="qa-ic">⊞</div><div class="qa-t">Carrossel</div><div class="qa-d">Slides com copy</div></div>
+      <div class="qa-c" onclick="go('builder')"><div class="qa-ic">🖼</div><div class="qa-t">Layout Builder</div><div class="qa-d">Design profissional</div></div>
+      <div class="qa-c" onclick="go('reel')"><div class="qa-ic">▶</div><div class="qa-t">Reel</div><div class="qa-d">Com segundagem</div></div>
+      <div class="qa-c" onclick="go('funil')"><div class="qa-ic">▽</div><div class="qa-t">Funil</div><div class="qa-d">Estratégia completa</div></div>
+    </div>
+    <div style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:12px">Últimas gerações</div>
+    <div id="dash-recent"></div>
+  </div>
+
+  <!-- CONFIGURAR MARCA -->
+  <div class="page" id="pg-marca">
+    <div class="ph"><h1>Configurar Marca.</h1><p>Carrega o briefing da tua marca ou cliente. Toda a IA usa estas informações — zero conteúdo genérico.</p></div>
+    <div id="marca-wrap"></div>
+  </div>
+
+  <!-- HISTÓRICO -->
+  <div class="page" id="pg-hist">
+    <div class="ph"><h1>Histórico.</h1><p>Tudo o que geraste. Clica para ver e copiar.</p></div>
+    <div id="hist-list"></div>
+  </div>
+
+  <!-- FAVORITOS -->
+  <div class="page" id="pg-favs">
+    <div class="ph"><h1>Favoritos.</h1><p>Temas guardados. Clica em "Usar" para gerar.</p></div>
+    <div id="favs-list"></div>
+  </div>
+
+  <!-- POST -->
+  <div class="page" id="pg-post">
+    <div class="ph"><h1>Post Instagram.</h1><p>Legenda completa na voz da tua marca.</p></div>
+    <div id="temas-post"></div>
+    <div class="panel"><div class="ph2"><div class="ph2-t">Configurar</div></div><div class="pb">
+      <div class="r2"><div><label class="lbl">Tema</label><input type="text" id="p-tema" placeholder="Ex: O que me fez mudar de carreira" /></div><div><label class="lbl">Hook <span id="hook-info-btn" style="font-size:9px;color:var(--green);cursor:pointer;border:1px solid rgba(43,92,86,.4);border-radius:10px;padding:1px 6px;margin-left:4px" onclick="toggleHookInfo()">?</span></label>
+        <select id="p-hook"><option>Provocação Silenciosa</option><option>Afirmação Ousada</option><option>O Espelho</option><option>Pergunta que Corta</option><option>O Contraste</option><option>A Revelação</option></select>
+        <div id="hook-info" style="display:none;margin-top:7px;background:rgba(43,92,86,.08);border:1px solid rgba(43,92,86,.2);border-radius:7px;padding:10px 12px;font-size:11px;color:var(--muted);line-height:1.7">
+          <div id="hook-desc"></div>
+        </div>
+      </div></div>
+      <div class="r2"><div><label class="lbl">Tom</label><select id="p-tom"><option>Educativo · Autoridade</option><option>Pessoal · Humanizado</option><option>Conversão</option><option>Reflexão</option></select></div><div><label class="lbl">Objectivo</label><select id="p-obj"><option>Atracção · Novos seguidores</option><option>Relacionamento</option><option>Conversão · Captar cliente</option></select></div></div>
+      <div class="r1"><label class="lbl">Ideias / pontos</label><textarea id="p-ideas" placeholder="Detalha o que queres incluir..."></textarea></div>
+      <div class="btn-row"><button class="btn btn-p" onclick="gen('post')">Gerar post</button><button class="btn btn-o btn-sm" onclick="clr('post')">Limpar</button></div>
+    </div></div>
+    <div class="out" id="out-post"><div class="out-hd"><div class="out-lbl">Post gerado</div><div style="display:flex;gap:7px"><button class="btn btn-g btn-sm" onclick="savHist('post')">💾 Guardar</button><button class="btn btn-gold btn-sm" onclick="cp('post')">Copiar</button></div></div><div class="out-body" id="ob-post"></div></div>
+  </div>
+
+  <!-- STORIES -->
+  <div class="page" id="pg-stories">
+    <div class="ph"><h1>Sequência de Stories.</h1><p>7 slides com estrutura e copy completo.</p></div>
+    <div id="temas-stories"></div>
+    <div class="panel"><div class="ph2"><div class="ph2-t">Configurar</div></div><div class="pb">
+      <div class="r2"><div><label class="lbl">Tema</label><input type="text" id="s-tema" placeholder="Ex: Como saí do zero ao primeiro cliente" /></div><div><label class="lbl">Objectivo</label><select id="s-obj"><option>Relacionamento</option><option>Autoridade</option><option>Conversão</option><option>Apresentação</option><option>Bastidores</option></select></div></div>
+      <div class="r1"><label class="lbl">Contexto</label><textarea id="s-ctx" placeholder="O que queres comunicar..."></textarea></div>
+      <div class="btn-row"><button class="btn btn-p" onclick="gen('stories')">Gerar sequência</button><button class="btn btn-o btn-sm" onclick="clr('stories')">Limpar</button></div>
+    </div></div>
+    <div class="out" id="out-stories"><div class="out-hd"><div class="out-lbl">Stories gerados</div><div style="display:flex;gap:7px"><button class="btn btn-g btn-sm" onclick="savHist('stories')">💾 Guardar</button><button class="btn btn-gold btn-sm" onclick="cp('stories')">Copiar</button></div></div><div class="out-body" id="ob-stories"></div></div>
+  </div>
+
+  <!-- CARROSSEL -->
+  <div class="page" id="pg-carrossel">
+    <div class="ph"><h1>Carrossel.</h1><p>Copy completo slide a slide. Pronto para o Builder ou Canva.</p></div>
+    <div id="temas-carrossel"></div>
+    <div class="panel"><div class="ph2"><div class="ph2-t">Configurar</div></div><div class="pb">
+      <div class="r2"><div><label class="lbl">Tema</label><input type="text" id="c-tema" placeholder="Ex: 5 erros que impedem de escalar" /></div><div><label class="lbl">Slides</label><select id="c-slides"><option>5 slides</option><option selected>7 slides</option><option>10 slides</option></select></div></div>
+      <div class="r1"><label class="lbl">Pontos principais</label><textarea id="c-pontos" placeholder="Ex: Falta de processos. Não delegar."></textarea></div>
+      <div class="btn-row"><button class="btn btn-p" onclick="gen('carrossel')">Gerar carrossel</button><button class="btn btn-o btn-sm" onclick="clr('carrossel')">Limpar</button></div>
+    </div></div>
+    <div class="out" id="out-carrossel"><div class="out-hd"><div class="out-lbl">Carrossel gerado</div><div style="display:flex;gap:7px"><button class="btn btn-g btn-sm" onclick="savHist('carrossel')">💾</button><button class="btn btn-gold btn-sm" onclick="cp('carrossel')">Copiar</button><button class="btn btn-p btn-sm" onclick="sendToBuilder()">→ Builder</button></div></div><div class="out-body" id="ob-carrossel"></div></div>
+  </div>
+
+  <!-- REEL -->
+  <div class="page" id="pg-reel">
+    <div class="ph"><h1>Guião de Reel.</h1><p>Com segundagem exacta e indicações visuais.</p></div>
+    <div id="temas-reel"></div>
+    <div class="panel"><div class="ph2"><div class="ph2-t">Configurar</div></div><div class="pb">
+      <div class="r2"><div><label class="lbl">Mensagem</label><input type="text" id="r-tema" placeholder="Ex: A diferença entre presença e ruído" /></div><div><label class="lbl">Duração</label><select id="r-dur"><option>30s</option><option selected>45s</option><option>60s</option></select></div></div>
+      <div class="r1"><label class="lbl">Contexto</label><textarea id="r-ctx" placeholder="Tom, estilo, bastidores ou câmara directa?"></textarea></div>
+      <div class="btn-row"><button class="btn btn-p" onclick="gen('reel')">Gerar guião</button><button class="btn btn-o btn-sm" onclick="clr('reel')">Limpar</button></div>
+    </div></div>
+    <div class="out" id="out-reel"><div class="out-hd"><div class="out-lbl">Reel gerado</div><div style="display:flex;gap:7px"><button class="btn btn-g btn-sm" onclick="savHist('reel')">💾</button><button class="btn btn-gold btn-sm" onclick="cp('reel')">Copiar</button></div></div><div class="out-body" id="ob-reel"></div></div>
+  </div>
+
+  <!-- NEWSLETTER -->
+  <div class="page" id="pg-newsletter">
+    <div class="ph"><h1>Newsletter.</h1><p>Subject, preview e carta completa.</p></div>
+    <div id="temas-newsletter"></div>
+    <div class="panel"><div class="ph2"><div class="ph2-t">Configurar</div></div><div class="pb">
+      <div class="r2"><div><label class="lbl">Tema</label><input type="text" id="n-tema" placeholder="Ex: O que aprendi a fazer errado" /></div><div><label class="lbl">Tom</label><select id="n-tom"><option>Pessoal · Como uma carta</option><option>Educativo</option><option>Narrativa · História</option><option>Reflexão</option></select></div></div>
+      <div class="r1"><label class="lbl">História / ideia</label><textarea id="n-hist" placeholder="Conta o que queres partilhar..."></textarea></div>
+      <div class="btn-row"><button class="btn btn-p" onclick="gen('newsletter')">Gerar newsletter</button><button class="btn btn-o btn-sm" onclick="clr('newsletter')">Limpar</button></div>
+    </div></div>
+    <div class="out" id="out-newsletter"><div class="out-hd"><div class="out-lbl">Newsletter gerada</div><div style="display:flex;gap:7px"><button class="btn btn-g btn-sm" onclick="savHist('newsletter')">💾</button><button class="btn btn-gold btn-sm" onclick="cp('newsletter')">Copiar</button></div></div><div class="out-body" id="ob-newsletter"></div></div>
+  </div>
+
+  <!-- FORMATOS CRIATIVOS -->
+  <div class="page" id="pg-formatos">
+    <div class="ph"><h1>Formatos Criativos.</h1><p>Tweet, LinkedIn, thread, bio, proposta DM, citação e mais.</p></div>
+    <div id="temas-formatos"></div>
+    <div class="dtabs" id="fmt-tabs"></div>
+    <div id="fmt-desc" style="background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:7px;padding:12px 15px;margin-bottom:14px;font-size:12px;color:var(--muted);font-weight:300;line-height:1.6"></div>
+    <div class="panel"><div class="ph2"><div class="ph2-t" id="fmt-ph-t">Gerar Tweet</div></div><div class="pb">
+      <div class="r1"><label class="lbl">Tema / mensagem</label><input type="text" id="fmt-tema" placeholder="Ex: O que ninguém te diz sobre delegar" /></div>
+      <div class="r1"><label class="lbl">Tom específico</label><input type="text" id="fmt-tom" placeholder="Ex: mais filosófico, com humor, directo..." /></div>
+      <div class="btn-row"><button class="btn btn-p" onclick="gen('formato')">Gerar</button><button class="btn btn-o btn-sm" onclick="clr('formato')">Limpar</button></div>
+    </div></div>
+    <div class="out" id="out-formato"><div class="out-hd"><div class="out-lbl" id="out-fmt-lbl">Formato gerado</div><button class="btn btn-gold btn-sm" onclick="cp('formato')">Copiar</button></div><div class="out-body" id="ob-formato"></div></div>
+  </div>
+
+  <!-- PLANO DE RETORNO -->
+  <div class="page" id="pg-retorno">
+    <div class="ph"><h1>Plano de Retorno.</h1><p>Sequência estratégica para quem regressa ou começa do zero. Cada fase tem objectivos claros — não saltes fases.</p></div>
+    <div style="background:rgba(196,168,130,.07);border:1px solid rgba(196,168,130,.15);border-radius:9px;padding:14px 18px;margin-bottom:18px;font-size:12.5px;color:var(--muted);font-weight:300;line-height:1.7">
+      <strong style="color:var(--text)">O que é o Plano de Retorno?</strong><br>É a sequência de fases que qualquer marca deve seguir ao regressar após ausência ou ao começar. Cada fase constrói a seguinte. A pressa é o maior inimigo aqui.
+    </div>
+    <div class="fase-seq">
+      <div class="fase-s af" onclick="sF(0,this)"><div class="fn">F0</div><div class="fm">Fundação</div></div>
+      <div class="fase-s" onclick="sF(1,this)"><div class="fn">F1</div><div class="fm">Primeiras Raízes</div></div>
+      <div class="fase-s" onclick="sF(2,this)"><div class="fn">F2</div><div class="fm">1ª Prova</div></div>
+      <div class="fase-s" onclick="sF(3,this)"><div class="fn">F3</div><div class="fm">Captação</div></div>
+    </div>
+    <div id="fase-info" style="background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:14px 18px;margin-bottom:16px;font-size:12.5px;color:var(--muted);font-weight:300;line-height:1.7"></div>
+    <div class="grid" id="fase-cards"></div>
+  </div>
+
+  <!-- DESAFIOS -->
+  <div class="page" id="pg-desafios">
+    <div class="ph"><h1>Desafios.</h1><p>Protocolos com objectivos claros. Clica num dia e gera.</p></div>
+    <div class="dtabs"><div class="dtab active" onclick="sD('21',this)">⚡ 21 Dias</div><div class="dtab" onclick="sD('seg',this)">📈 Seguidores</div><div class="dtab" onclick="sD('dms',this)">💬 DMs</div><div class="dtab" onclick="sD('well',this)">🌿 Wellness</div></div>
+    <div class="dp active" id="dp-21"><div class="proto-hd"><h2>Protocolo 21 Dias</h2><p>Narrativa progressiva: Consciência → Autoridade → Conversão.</p></div><div class="slbl">Semana 1</div><div class="dgrid" id="dg-s1"></div><div class="slbl">Semana 2</div><div class="dgrid" id="dg-s2"></div><div class="slbl">Semana 3</div><div class="dgrid" id="dg-s3"></div></div>
+    <div class="dp" id="dp-seg"><div class="proto-hd"><h2>Aumentar Seguidores</h2><p>Conteúdo de alcance e atracção orgânica.</p></div><div class="dgrid" id="dg-seg"></div></div>
+    <div class="dp" id="dp-dms"><div class="proto-hd"><h2>Aumentar DMs</h2><p>Conteúdo que convida à conversa directa.</p></div><div class="dgrid" id="dg-dms"></div></div>
+    <div class="dp" id="dp-well"><div class="proto-hd"><h2>Wellness Digital</h2><p>Presença com intenção, sem exaustão.</p></div><div class="dgrid" id="dg-well"></div></div>
+    <hr>
+    <div class="panel"><div class="ph2"><div class="ph2-t" id="d-gen-t">Selecciona um dia acima</div></div><div class="pb">
+      <div class="r2"><div><label class="lbl">Dia seleccionado</label><input type="text" id="d-dia" readonly placeholder="Clica num dia" style="background:rgba(255,255,255,.03)"/></div><div><label class="lbl">Formato</label><select id="d-fmt"><option>Post</option><option>Carrossel</option><option>Reel</option><option>Stories</option></select></div></div>
+      <div class="r1"><label class="lbl">Contexto adicional</label><textarea id="d-ctx" placeholder="Qualquer detalhe específico..."></textarea></div>
+      <div class="btn-row"><button class="btn btn-p" onclick="gen('desafio')">Gerar</button><button class="btn btn-o btn-sm" onclick="clr('desafio')">Limpar</button></div>
+    </div></div>
+    <div class="out" id="out-desafio"><div class="out-hd"><div class="out-lbl" id="d-lbl">Desafio</div><button class="btn btn-gold btn-sm" onclick="cp('desafio')">Copiar</button></div><div class="out-body" id="ob-desafio"></div></div>
+  </div>
+
+  <!-- NARRATIVAS -->
+  <div class="page" id="pg-narrativas">
+    <div class="ph"><h1>Narrativas de Stories.</h1><p>Estruturas provadas. Clica para gerar adaptado à tua marca.</p></div>
+    <div class="nc" id="nc-tabs"></div>
+    <div id="nc-panels"></div>
+  </div>
+
+  <!-- 60 IDEIAS -->
+  <div class="page" id="pg-sessenta">
+    <div class="ph"><h1>60 Ideias de Conteúdo.</h1><p>Branded Content em 4 categorias. Clica e gera para o teu nicho.</p></div>
+    <div class="bc-cats"><div class="bc-cat edu s" onclick="fBC('edu',this)">Educação</div><div class="bc-cat ativ" onclick="fBC('ativ',this)">Activação</div><div class="bc-cat asp" onclick="fBC('asp',this)">Aspiração</div><div class="bc-cat conv" onclick="fBC('conv',this)">Conversão</div></div>
+    <div id="bc-list"></div>
+    <hr>
+    <div class="panel"><div class="ph2"><div class="ph2-t" id="bc-gt">Selecciona uma ideia</div></div><div class="pb">
+      <div class="r2"><div><label class="lbl">Ideia</label><input type="text" id="bc-ideia" readonly style="background:rgba(255,255,255,.03)" placeholder="Clica numa ideia"/></div><div><label class="lbl">Formato</label><select id="bc-fmt"><option>Post</option><option>Carrossel</option><option>Reel</option><option>Stories</option><option>Newsletter</option></select></div></div>
+      <div class="r1"><label class="lbl">Contexto do teu nicho</label><textarea id="bc-ctx" placeholder="Ex: Sou nutricionista, o meu público quer emagrecer sem dietas restritivas..."></textarea></div>
+      <div class="btn-row"><button class="btn btn-p" onclick="gen('bc')">Gerar para o meu nicho</button><button class="btn btn-o btn-sm" onclick="clr('bc')">Limpar</button></div>
+    </div></div>
+    <div class="out" id="out-bc"><div class="out-hd"><div class="out-lbl">60 Ideias · gerado</div><button class="btn btn-gold btn-sm" onclick="cp('bc')">Copiar</button></div><div class="out-body" id="ob-bc"></div></div>
+  </div>
+
+  <!-- FUNIL -->
+  <div class="page" id="pg-funil">
+    <div class="ph"><h1>Funil de Captação.</h1><p>Cada etapa tem um propósito. A maioria só cria Topo — e fica sem clientes.</p></div>
+    <div style="background:rgba(196,168,130,.07);border:1px solid rgba(196,168,130,.15);border-radius:9px;padding:13px 16px;margin-bottom:18px;font-size:12px;color:var(--muted);font-weight:300;line-height:1.7">
+      Clica em cada etapa para perceber <strong style="color:var(--text)">quando usar</strong>, <strong style="color:var(--text)">que conteúdo criar</strong> e gera directamente.
+    </div>
+    <div class="funil-v">
+      <div class="fs-f af" onclick="selFL('topo',this)"><div class="fs-f-lbl">Topo · Alcance</div><div class="fs-f-t">Atracção</div><div class="fs-f-d">Reels · Posts · Carrosséis</div></div>
+      <div class="fs-f" onclick="selFL('meio',this)"><div class="fs-f-lbl">Meio · Relacionamento</div><div class="fs-f-t">Confiança</div><div class="fs-f-d">Stories · Newsletter</div></div>
+      <div class="fs-f" onclick="selFL('fundo',this)"><div class="fs-f-lbl">Fundo · Intenção</div><div class="fs-f-t">Conversão</div><div class="fs-f-d">Oferta · CTA · Caso de Estudo</div></div>
+      <div class="fs-f" onclick="selFL('pos',this)"><div class="fs-f-lbl">Pós-Venda</div><div class="fs-f-t">Retenção</div><div class="fs-f-d">Testemunhos · Referências</div></div>
+    </div>
+    <div class="funil-info" id="funil-info"></div>
+    <div id="temas-funil"></div>
+    <div class="panel"><div class="ph2"><div class="ph2-t" id="fl-gt">Gerar — Topo</div></div><div class="pb">
+      <div class="r2"><div><label class="lbl">Etapa</label><select id="fl-etapa"><option>Topo · Atracção</option><option>Meio · Confiança</option><option>Fundo · Conversão</option><option>Pós-Venda</option></select></div><div><label class="lbl">Formato</label><select id="fl-fmt"><option>Post</option><option>Stories</option><option>Reel</option><option>Carrossel</option><option>DM</option></select></div></div>
+      <div class="r1"><label class="lbl">Contexto</label><textarea id="fl-ctx" placeholder="Ex: Quero conteúdo de topo que mostre o que faço de diferente..."></textarea></div>
+      <div class="btn-row"><button class="btn btn-p" onclick="gen('funil')">Gerar</button><button class="btn btn-o btn-sm" onclick="clr('funil')">Limpar</button></div>
+    </div></div>
+    <div class="out" id="out-funil"><div class="out-hd"><div class="out-lbl">Funil gerado</div><button class="btn btn-gold btn-sm" onclick="cp('funil')">Copiar</button></div><div class="out-body" id="ob-funil"></div></div>
+  </div>
+
+  <!-- PLANO EDITORIAL -->
+  <div class="page" id="pg-plano">
+    <div class="ph"><h1>Plano Editorial.</h1><p>A tua semana organizada com propósito.</p></div>
+    <div id="temas-plano"></div>
+    <div class="panel"><div class="ph2"><div class="ph2-t">Configurar</div></div><div class="pb">
+      <div class="r2"><div><label class="lbl">Fase</label><select id="pl-fase"><option>F0 · Fundação</option><option>F1 · Primeiras Raízes</option><option>F2 · Primeira Prova</option><option>F3 · Captação</option></select></div><div><label class="lbl">Frequência</label><select id="pl-freq"><option>3x/semana</option><option selected>4x/semana</option><option>5x/semana</option><option>Diário</option></select></div></div>
+      <div class="r1"><label class="lbl">Tema / foco da semana</label><input type="text" id="pl-tema" placeholder="Ex: Semana de posicionamento" /></div>
+      <div class="btn-row"><button class="btn btn-p" onclick="gen('plano')">Gerar plano</button></div>
+    </div></div>
+    <div class="out" id="out-plano"><div class="out-hd"><div class="out-lbl">Plano Editorial</div><button class="btn btn-gold btn-sm" onclick="cp('plano')">Copiar</button></div><div class="out-body" id="ob-plano"></div></div>
+  </div>
+
+  <!-- LAYOUT BUILDER -->
+  <div class="page" id="pg-builder" style="padding:0;max-width:none">
+    <div class="builder">
+      <div class="bl-l">
+        <div style="padding:12px 14px;border-bottom:1px solid var(--border);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)">Layout Builder</div>
+        <div class="bl-sec open" id="bls-style">
+          <div class="bl-sec-hd" onclick="togBLS('style')">Estilo Visual</div>
+          <div class="bl-sec-body">
+            <div class="style-grid">
+              <div class="style-opt active" onclick="setSty('minimal',this)"><div class="style-prev">◻</div>Minimalista</div>
+              <div class="style-opt" onclick="setSty('editorial',this)"><div class="style-prev" style="font-style:italic;font-family:'Cormorant Garamond',serif">It</div>Editorial</div>
+              <div class="style-opt" onclick="setSty('bold',this)"><div class="style-prev" style="font-weight:700">B</div>Bold</div>
+              <div class="style-opt" onclick="setSty('split',this)"><div class="style-prev">◧</div>Split</div>
+              <div class="style-opt" onclick="setSty('centered',this)"><div class="style-prev">⊙</div>Centrado</div>
+              <div class="style-opt" onclick="setSty('overlap',this)"><div class="style-prev">◈</div>Overlap</div>
+            </div>
+            <span class="bl-lbl">Proporção</span>
+            <div class="ratio-tabs">
+              <div class="ratio-tab active" onclick="setRat('sq',this)">1:1</div>
+              <div class="ratio-tab" onclick="setRat('pt',this)">4:5</div>
+              <div class="ratio-tab" onclick="setRat('st',this)">9:16</div>
+            </div>
+          </div>
+        </div>
+        <div class="bl-sec open" id="bls-colors">
+          <div class="bl-sec-hd" onclick="togBLS('colors')">Cores</div>
+          <div class="bl-sec-body">
+            <span class="bl-lbl">Fundo</span><div class="c-pair"><input type="color" class="c-sw" id="c-bg" value="#1C3D3A" oninput="syncC('c-bg',this.value);uCv()"><input class="bl-inp" id="c-bg-h" value="#1C3D3A" style="margin:0" oninput="syncC('c-bg',this.value)"></div>
+            <span class="bl-lbl">Texto</span><div class="c-pair"><input type="color" class="c-sw" id="c-tx" value="#FAFAF8" oninput="syncC('c-tx',this.value);uCv()"><input class="bl-inp" id="c-tx-h" value="#FAFAF8" style="margin:0" oninput="syncC('c-tx',this.value)"></div>
+            <span class="bl-lbl">Detalhe</span><div class="c-pair"><input type="color" class="c-sw" id="c-ac" value="#C4A882" oninput="syncC('c-ac',this.value);uCv()"><input class="bl-inp" id="c-ac-h" value="#C4A882" style="margin:0" oninput="syncC('c-ac',this.value)"></div>
+            <span class="bl-lbl">Degrade</span>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:8px" id="grad-g"></div>
+          </div>
+        </div>
+        <div class="bl-sec" id="bls-fonts">
+          <div class="bl-sec-hd" onclick="togBLS('fonts')">Tipografia</div>
+          <div class="bl-sec-body">
+            <span class="bl-lbl">Fonte principal</span>
+            <div id="fonts-main"></div>
+          </div>
+        </div>
+        <div class="bl-sec" id="bls-tex">
+          <div class="bl-sec-hd" onclick="togBLS('tex')">Texturas</div>
+          <div class="bl-sec-body">
+            <div class="tex-grid" id="tex-g"></div>
+            <span class="bl-lbl">Intensidade</span>
+            <input type="range" id="tex-op" min="0" max="100" value="25" style="width:100%;accent-color:var(--green);margin-bottom:8px" oninput="uCv()">
+          </div>
+        </div>
+        <div class="bl-sec" id="bls-brand">
+          <div class="bl-sec-hd" onclick="togBLS('brand')">Marca</div>
+          <div class="bl-sec-body">
+            <span class="bl-lbl">Nome / handle</span>
+            <input class="bl-inp" id="b-marca" placeholder="@marca" oninput="uCv()">
+            <span class="bl-lbl">Logo</span>
+            <input type="file" id="b-logo-f" accept="image/*" style="display:none" onchange="loadLogo(this)">
+            <div class="foto-drop-bl" onclick="document.getElementById('b-logo-f').click()">+ Logo</div>
+            <img id="b-logo-p" style="display:none;width:44px;height:44px;object-fit:cover;border-radius:50%;margin-top:6px">
+          </div>
+        </div>
+      </div>
+      <div class="bl-c">
+        <div class="bl-canvas" id="bl-canvas"><div id="cv-wrap"><canvas id="main-cv"></canvas></div></div>
+        <div class="strip" id="strip"><div class="strip-add" onclick="addSlide()" title="Novo slide">+</div></div>
+      </div>
+      <div class="bl-r">
+        <div class="bl-r-hd">
+          <div style="font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:var(--gold);margin-bottom:7px">Slide <span id="cur-n">1</span> de <span id="tot-n">1</span></div>
+          <span class="bl-lbl">Texto principal</span>
+          <textarea class="bl-ta" id="bl-txt-main" placeholder="Título / copy principal" rows="3" oninput="upCurSlide()"></textarea>
+          <span class="bl-lbl">Texto secundário</span>
+          <textarea class="bl-ta" id="bl-txt-sub" rows="2" placeholder="Subtítulo ou detalhe" oninput="upCurSlide()" style="min-height:55px"></textarea>
+          <span class="bl-lbl">Tamanho do título</span>
+          <div class="sz-row"><button class="sz-btn" onclick="adjSz(-2)">A−</button><input class="bl-inp" id="bl-sz" value="48" style="margin:0;text-align:center;width:56px" oninput="upCurSlide()"><button class="sz-btn" onclick="adjSz(2)">A+</button></div>
+          <span class="bl-lbl">Posição</span>
+          <div class="pos-grid">
+            <div class="pos-btn" onclick="setPos('tl',this)">↖</div><div class="pos-btn" onclick="setPos('tc',this)">↑</div><div class="pos-btn" onclick="setPos('tr',this)">↗</div>
+            <div class="pos-btn" onclick="setPos('ml',this)">←</div><div class="pos-btn" onclick="setPos('mc',this)">·</div><div class="pos-btn" onclick="setPos('mr',this)">→</div>
+            <div class="pos-btn active" onclick="setPos('bl',this)">↙</div><div class="pos-btn" onclick="setPos('bc',this)">↓</div><div class="pos-btn" onclick="setPos('br',this)">↘</div>
+          </div>
+          <span class="bl-lbl">Foto (este slide)</span>
+          <input type="file" id="bl-foto-f" accept="image/*" style="display:none" onchange="loadSFoto(this)">
+          <div class="foto-drop-bl" id="bl-foto-drop" onclick="document.getElementById('bl-foto-f').click()">+ Foto de fundo</div>
+          <div id="bl-foto-pw" style="display:none;margin-bottom:8px">
+            <img id="bl-foto-p" style="width:100%;max-height:72px;object-fit:cover;border-radius:5px">
+            <div style="font-size:10px;color:var(--muted);margin-top:3px;cursor:pointer" onclick="rmFoto()" onmouseenter="this.style.color='var(--red)'" onmouseleave="this.style.color='var(--muted)'">✕ Remover</div>
+          </div>
+          <span class="bl-lbl">Opacidade da foto</span>
+          <input type="range" id="bl-fop" min="0" max="100" value="40" style="width:100%;accent-color:var(--green);margin-bottom:10px" oninput="upCurSlide()">
+          <div style="display:flex;gap:5px">
+            <button class="btn btn-o btn-sm" style="flex:1;font-size:10.5px" onclick="dupSlide()">Dup.</button>
+            <button class="btn btn-sm" style="flex:1;font-size:10.5px;background:rgba(184,92,56,.12);border:1px solid rgba(184,92,56,.25);color:var(--red)" onclick="delSlide()">Del.</button>
+          </div>
+        </div>
+        <div class="exp-btns">
+          <button class="exp-btn exp-all" onclick="expAll()">⬇ Exportar todos os slides</button>
+          <button class="exp-btn exp-one" onclick="expOne()">⬇ Exportar este slide</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAIS -->
+<div class="modal" id="modal-brand">
+  <div class="modal-box">
+    <div class="modal-t">Marcas / Clientes</div>
+    <div id="brand-mc"></div>
+    <hr>
+    <button class="btn btn-p btn-sm" onclick="go('marca');closeModal('brand')">+ Nova marca</button>
+  </div>
+</div>
+
+<div class="modal" id="modal-obj">
+  <div class="modal-box">
+    <div class="modal-t">Objectivo do mês</div>
+    <div class="r1"><label class="lbl">Mês</label><select id="obj-mes"><option>Janeiro</option><option>Fevereiro</option><option>Março</option><option selected>Abril</option><option>Maio</option><option>Junho</option><option>Julho</option><option>Agosto</option><option>Setembro</option><option>Outubro</option><option>Novembro</option><option>Dezembro</option></select></div>
+    <div class="r1"><label class="lbl">Objectivo principal</label><input type="text" id="obj-tit" placeholder="Ex: Fechar o primeiro cliente" /></div>
+    <div class="r1"><label class="lbl">Descrição</label><textarea id="obj-dsc" placeholder="O que vais fazer este mês?"></textarea></div>
+    <div class="r1"><label class="lbl">Meta mensurável</label><input type="text" id="obj-met" placeholder="Ex: 1 cliente · €1.500/mês" /></div>
+    <div class="btn-row"><button class="btn btn-p" onclick="saveObj()">Guardar</button><button class="btn btn-o" onclick="closeModal('obj')">Cancelar</button></div>
+  </div>
+</div>
+
+<div class="modal" id="modal-hist">
+  <div class="modal-box" style="max-width:640px">
+    <div class="modal-t" id="mh-t">Conteúdo</div>
+    <div id="mh-b" style="font-size:13px;line-height:1.85;white-space:pre-wrap;font-weight:300;max-height:55vh;overflow-y:auto"></div>
+    <div class="btn-row" style="margin-top:16px"><button class="btn btn-gold" onclick="cpModal()">Copiar</button><button class="btn btn-o" onclick="closeModal('hist')">Fechar</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- SUPABASE CONFIG — SUBSTITUI AQUI -->
+<script>
+const SUPABASE_URL = 'COLOCA_A_TUA_SUPABASE_URL';
+const SUPABASE_KEY = 'COLOCA_A_TUA_SUPABASE_ANON_KEY';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let USER=null,BRAND=null,BRANDS=[],OBJ=null,HIST=[],FAVS=[];
+let fmtAtual='twitter';
+
+// AUTH
+async function initAuth(){
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session){window.location.href='index.html';return;}
+  USER=session.user;
+  const name=USER.user_metadata?.full_name||USER.email?.split('@')[0]||'Utilizador';
+  document.getElementById('sb-un').textContent=name;
+  document.getElementById('sb-av').textContent=name[0].toUpperCase();
+  const h=new Date().getHours();
+  document.getElementById('dash-greet').textContent=(h<12?'Bom dia':h<18?'Boa tarde':'Boa noite')+', '+name.split(' ')[0]+'.';
+  await loadData();
+}
+async function doLogout(){await sb.auth.signOut();window.location.href='index.html';}
+
+// DATA LOAD
+async function loadData(){
+  const {data:brands}=await sb.from('brands').select('*').eq('user_id',USER.id).order('created_at');
+  BRANDS=brands||[];
+  if(BRANDS.length>0){BRAND=BRANDS[0];updBrandUI();}
+  else document.getElementById('dash-alert').style.display='block';
+
+  const now=new Date();
+  const {data:goals}=await sb.from('monthly_goals').select('*').eq('user_id',USER.id).eq('year',now.getFullYear()).eq('month',getMon()).order('created_at',{ascending:false}).limit(1);
+  if(goals&&goals.length>0){OBJ=goals[0];renderObjUI();}
+
+  const {data:favs}=await sb.from('favorites').select('*').eq('user_id',USER.id).order('created_at',{ascending:false});
+  FAVS=favs||[];document.getElementById('f-badge').textContent=FAVS.length;
+
+  const {data:hist}=await sb.from('content_history').select('*').eq('user_id',USER.id).order('created_at',{ascending:false}).limit(60);
+  HIST=hist||[];document.getElementById('h-badge').textContent=HIST.length;
+
+  renderDash();buildMarca();renderHist();renderFavs();setupTemas();
+}
+function getMon(){return ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][new Date().getMonth()];}
+function updBrandUI(){if(!BRAND)return;document.getElementById('sb-bn').textContent=BRAND.name;document.getElementById('sb-bs').textContent=BRAND.niche||'Marca activa';}
+
+// OBJECTIVO
+function openModal(id){document.getElementById('modal-'+id).classList.add('open');}
+function closeModal(id){document.getElementById('modal-'+id).classList.remove('open');}
+async function saveObj(){
+  const t=document.getElementById('obj-tit').value;if(!t){showT('Define o objectivo.');return;}
+  const now=new Date();
+  const data={user_id:USER.id,brand_id:BRAND?.id||null,month:getMon(),year:now.getFullYear(),title:t,description:document.getElementById('obj-dsc').value,metric:document.getElementById('obj-met').value};
+  if(OBJ){await sb.from('monthly_goals').update(data).eq('id',OBJ.id);}
+  else{const {data:r}=await sb.from('monthly_goals').insert(data).select().single();OBJ=r;}
+  OBJ={...OBJ,...data};renderObjUI();closeModal('obj');showT('Objectivo guardado.');
+}
+function renderObjUI(){if(!OBJ)return;document.getElementById('tb-obj-txt').textContent=OBJ.month+' · '+OBJ.title;}
+function oCtx(){return OBJ?'\nOBJECTIVO ('+OBJ.month+'): '+OBJ.title+'. '+(OBJ.description||'')+'. Meta: '+(OBJ.metric||'')+'.':'';}
+
+// BRAND
+function brandCtx(){
+  if(!BRAND)return '\n[Utilizador ainda sem marca configurada. Usa tom adaptável.]';
+  return `\n== MARCA ==\nNome: ${BRAND.name}\nNicho: ${BRAND.niche||''}\nTagline: ${BRAND.tagline||''}\nVoz: ${BRAND.voice||''}\nPúblico: ${BRAND.audience||''}\nValores: ${BRAND.values||''}\nUSAR: ${BRAND.vocabulary_use||''}\nEVITAR: ${BRAND.vocabulary_avoid||''}\nBriefing: ${BRAND.briefing_text||''}`;
+}
+
+// DASHBOARD
+function renderDash(){
+  document.getElementById('dash-stats').innerHTML=`
+    <div class="stat-c"><div class="stat-n">${HIST.length}</div><div class="stat-l">Conteúdos gerados</div></div>
+    <div class="stat-c"><div class="stat-n">${FAVS.length}</div><div class="stat-l">Favoritos</div></div>
+    <div class="stat-c"><div class="stat-n">${BRANDS.length}</div><div class="stat-l">Marca(s)</div></div>
+    <div class="stat-c"><div class="stat-n">${OBJ?'✓':'—'}</div><div class="stat-l">Objectivo do mês</div></div>`;
+  const r=document.getElementById('dash-recent');
+  if(HIST.length===0){r.innerHTML='<div style="font-size:13px;color:var(--muted);font-weight:300">Ainda sem conteúdos. Começa por criar algo!</div>';return;}
+  r.innerHTML=HIST.slice(0,4).map(h=>`<div class="hist-item" onclick="openHistM('${h.id}')"><div class="hist-type">${h.type}</div><div class="hist-tema">${h.prompt_tema||'—'}</div><div class="hist-prev">${(h.generated_content||'').substring(0,120)}...</div><div class="hist-date">${new Date(h.created_at).toLocaleDateString('pt-PT')}</div></div>`).join('');
+}
+
+// HIST
+function renderHist(){
+  const c=document.getElementById('hist-list');
+  if(HIST.length===0){c.innerHTML='<div style="font-size:13px;color:var(--muted);font-weight:300">Sem histórico ainda.</div>';return;}
+  c.innerHTML=HIST.map(h=>`<div class="hist-item" onclick="openHistM('${h.id}')"><div class="hist-type">${h.type}</div><div class="hist-tema">${h.prompt_tema||'—'}</div><div class="hist-prev">${(h.generated_content||'').substring(0,150)}...</div><div class="hist-date">${new Date(h.created_at).toLocaleDateString('pt-PT')}</div></div>`).join('');
+}
+function openHistM(id){
+  const h=HIST.find(x=>x.id===id);if(!h)return;
+  document.getElementById('mh-t').textContent=h.type+' · '+(h.prompt_tema||'');
+  document.getElementById('mh-b').textContent=h.generated_content;
+  openModal('hist');
+}
+function cpModal(){navigator.clipboard.writeText(document.getElementById('mh-b').textContent).then(()=>showT('Copiado.'));}
+
+// FAVS
+function renderFavs(){
+  const c=document.getElementById('favs-list');
+  if(FAVS.length===0){c.innerHTML='<div style="font-size:13px;color:var(--muted);font-weight:300">Sem favoritos. Guarda temas com ♡.</div>';return;}
+  c.innerHTML=FAVS.map(f=>`<div style="background:var(--s2);border:1px solid var(--border);border-radius:var(--r);padding:12px 16px;margin-bottom:7px;display:flex;align-items:center;gap:10px">
+    <div style="flex:1"><div style="font-size:13px;font-weight:500;margin-bottom:2px">${f.title}</div><div style="font-size:11px;color:var(--muted);font-style:italic">${f.hook||''}</div><div style="font-size:10px;color:var(--green);margin-top:3px">${f.section||''}</div></div>
+    <div style="display:flex;gap:7px">
+      <div style="font-size:10px;color:var(--green);padding:3px 9px;border:1px solid rgba(43,92,86,.4);border-radius:20px;cursor:pointer" onclick="useFav('${encodeURIComponent(f.title)}','${f.section}')">Usar</div>
+      <div style="font-size:13px;color:var(--muted);cursor:pointer;padding:2px 5px" onclick="delFav('${f.id}')" onmouseenter="this.style.color='var(--red)'" onmouseleave="this.style.color='var(--muted)'">✕</div>
+    </div>
+  </div>`).join('');
+}
+async function savFav(title,hook,cat,sec){
+  if(FAVS.find(f=>f.title===title)){showT('Já guardado.');return;}
+  const {data:r}=await sb.from('favorites').insert({user_id:USER.id,brand_id:BRAND?.id||null,title,hook,category:cat,section:sec}).select().single();
+  if(r){FAVS.unshift(r);document.getElementById('f-badge').textContent=FAVS.length;renderFavs();}
+}
+async function delFav(id){
+  await sb.from('favorites').delete().eq('id',id);
+  FAVS=FAVS.filter(f=>f.id!==id);document.getElementById('f-badge').textContent=FAVS.length;renderFavs();
+}
+function useFav(t,sec){
+  const title=decodeURIComponent(t);go(sec);
+  const m={post:'p-tema',carrossel:'c-tema',reel:'r-tema',stories:'s-tema',newsletter:'n-tema'};
+  if(m[sec])setV(m[sec],title);
+}
+
+// MARCA CONFIG
+function buildMarca(){
+  const w=document.getElementById('marca-wrap');
+  if(BRANDS.length===0){
+    w.innerHTML=`<div style="max-width:640px">
+      <div class="prog"><div class="prog-fill" id="op" style="width:33%"></div></div>
+
+      <!-- STEP 1: PDF FIRST -->
+      <div id="os-1" style="display:block">
+        <div class="onb-title">Começa pelo briefing</div>
+        <div class="onb-desc">Carrega o PDF ou documento da marca. A IA lê e preenche tudo automaticamente — só tens de confirmar.</div>
+        <input type="file" id="b-files" multiple accept=".pdf,.txt,.md,image/*" style="display:none" onchange="procFilesAI(this)">
+        <div class="upload-a" id="ua" onclick="document.getElementById('b-files').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleDropAI(event)">
+          <div style="font-size:36px;opacity:.35;margin-bottom:10px">📄</div>
+          <div style="font-size:14px;font-weight:500;margin-bottom:5px">Carrega o briefing da marca</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:10px">PDF, TXT, imagens · Arrasta ou clica</div>
+          <div style="font-size:11px;color:var(--green);background:rgba(43,92,86,.12);padding:5px 12px;border-radius:20px;display:inline-block">A IA lê e preenche os campos automaticamente ✦</div>
+        </div>
+        <div id="ai-reading" style="display:none;margin-top:14px;background:rgba(43,92,86,.08);border:1px solid rgba(43,92,86,.2);border-radius:9px;padding:14px 18px">
+          <div style="font-size:12.5px;color:var(--green);font-weight:500;margin-bottom:4px">A ler o documento...</div>
+          <div class="loading"><div class="dots"><span></span><span></span><span></span></div><span style="font-size:12px;color:var(--muted);margin-left:4px">A extrair informações da marca</span></div>
+        </div>
+        <div id="fl" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px"></div>
+        <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:10px;text-align:center">ou escreve directamente</div>
+          <div class="r1"><textarea id="b-brf-quick" placeholder="Cola aqui qualquer texto sobre a marca..." style="min-height:80px"></textarea></div>
+        </div>
+        <div class="btn-row"><button class="btn btn-p" onclick="onbN(2)" id="btn-onb-next">Continuar →</button></div>
+      </div>
+
+      <!-- STEP 2: CONFIRM / EDIT FIELDS -->
+      <div id="os-2" style="display:none">
+        <div class="onb-title">Confirma os dados</div>
+        <div class="onb-desc">A IA preencheu com base no briefing. Ajusta o que precisares.</div>
+        <div id="ai-filled-badge" style="display:none;background:rgba(43,92,86,.1);border:1px solid rgba(43,92,86,.25);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:var(--green)">✦ Preenchido automaticamente pela IA com base no teu documento</div>
+        <div class="r2"><div><label class="lbl">Nome da marca</label><input type="text" id="b-name" placeholder="Ex: Jessica Carreira" /></div><div><label class="lbl">Nicho / sector</label><input type="text" id="b-niche" placeholder="Ex: Gestora de presença digital" /></div></div>
+        <div class="r1"><label class="lbl">Tagline / frase de posicionamento</label><input type="text" id="b-tg" placeholder="Ex: Liberto-te do operacional para escalares" /></div>
+        <div class="r1"><label class="lbl">Público-alvo</label><textarea id="b-aud" placeholder="Quem compra? Idade, situação, desejos, dores..."></textarea></div>
+        <div class="r1"><label class="lbl">Tom de voz</label><textarea id="b-voice" placeholder="Ex: Calmo, firme, elegante. Sem exclamações."></textarea></div>
+        <div class="r1"><label class="lbl">Valores</label><textarea id="b-vals" placeholder="Ex: 1. Libertação antes de escala 2. Delegar é liderar"></textarea></div>
+        <div class="r2"><div><label class="lbl">Palavras a USAR</label><textarea id="b-vu" style="min-height:65px" placeholder="presença digital, bastidores..."></textarea></div><div><label class="lbl">Palavras a EVITAR</label><textarea id="b-va" style="min-height:65px" placeholder="social media, posts, freelancer..."></textarea></div></div>
+        <div class="btn-row"><button class="btn btn-o" onclick="onbN(1)">← Voltar</button><button class="btn btn-p" onclick="saveBrand()">Guardar marca →</button></div>
+      </div>
+    </div>`;
+  } else {
+    let html=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><div style="font-size:13px;color:var(--muted)">Tens <strong style="color:var(--text)">${BRANDS.length}</strong> marca(s).</div><button class="btn btn-p btn-sm" onclick="newBrand()">+ Nova</button></div>`;
+    BRANDS.forEach(b=>{
+      html+=`<div style="background:var(--s2);border:1px solid ${BRAND?.id===b.id?'var(--green)':'var(--border)'};border-radius:var(--r);padding:16px 18px;margin-bottom:9px;cursor:pointer;transition:all .15s" onclick="selBrand('${b.id}')">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px"><div style="font-size:14px;font-weight:500">${b.name}</div>${BRAND?.id===b.id?'<span style="font-size:9px;background:rgba(43,92,86,.2);color:var(--green);padding:2px 8px;border-radius:20px;letter-spacing:.1em">ACTIVA</span>':''}</div>
+        <div style="font-size:12px;color:var(--muted);font-weight:300">${b.niche||'—'} · ${b.tagline||'Sem tagline'}</div>
+      </div>`;
+    });
+    w.innerHTML=html;
+  }
+}
+function onbN(s){
+  [1,2].forEach(i=>{const el=document.getElementById('os-'+i);if(el)el.style.display=i===s?'block':'none';});
+  const op=document.getElementById('op');if(op)op.style.width=(s===1?'33':'66')+'%';
+}
+let extraText='',pdfBase64Data=null;
+
+async function procFilesAI(inp){
+  const fl=document.getElementById('fl');fl.innerHTML='';
+  const f=inp.files[0];if(!f)return;
+  const badge=document.createElement('span');badge.style.cssText='background:rgba(43,92,86,.15);border:1px solid rgba(43,92,86,.3);border-radius:20px;padding:3px 10px;font-size:11px';badge.textContent='📎 '+f.name;fl.appendChild(badge);
+
+  // Show reading indicator
+  document.getElementById('ai-reading').style.display='block';
+  document.getElementById('btn-onb-next').disabled=true;
+  document.getElementById('btn-onb-next').textContent='A ler...';
+
+  try{
+    if(f.type==='text/plain'||f.name.endsWith('.md')){
+      extraText=await f.text();
+      await aiExtractBrand(extraText,null);
+    } else if(f.type==='application/pdf'||f.name.endsWith('.pdf')){
+      // Read PDF as base64 for Claude API
+      const buf=await f.arrayBuffer();
+      const bytes=new Uint8Array(buf);
+      let binary='';bytes.forEach(b=>binary+=String.fromCharCode(b));
+      pdfBase64Data=btoa(binary);
+      await aiExtractBrand(null,pdfBase64Data);
+    } else if(f.type.startsWith('image/')){
+      const buf=await f.arrayBuffer();const bytes=new Uint8Array(buf);let binary='';bytes.forEach(b=>binary+=String.fromCharCode(b));
+      const b64=btoa(binary);
+      await aiExtractBrand(null,null,b64,f.type);
+    }
+  }catch(e){
+    showT('Erro ao ler ficheiro: '+e.message);
+    document.getElementById('ai-reading').style.display='none';
+    document.getElementById('btn-onb-next').disabled=false;
+    document.getElementById('btn-onb-next').textContent='Continuar →';
+  }
+}
+
+async function aiExtractBrand(textContent,pdfB64,imageB64,imageType){
+  const extractPrompt=`Analisa este documento de briefing de marca e extrai as seguintes informações. Responde EXACTAMENTE neste formato JSON (sem markdown, sem backticks):
+{"name":"nome da marca","niche":"nicho ou sector","tagline":"tagline ou frase de posicionamento","audience":"descrição do público-alvo","voice":"tom de voz da marca","values":"valores da marca","vocabulary_use":"palavras a usar","vocabulary_avoid":"palavras a evitar","briefing_summary":"resumo do briefing em 3-4 frases"}
+
+Se alguma informação não existir no documento, deixa o campo vazio "".`;
+
+  const messages=[{role:'user',content:[]}];
+  if(pdfB64){
+    messages[0].content.push({type:'document',source:{type:'base64',media_type:'application/pdf',data:pdfB64}});
+    messages[0].content.push({type:'text',text:extractPrompt});
+  } else if(imageB64){
+    messages[0].content.push({type:'image',source:{type:'base64',media_type:imageType||'image/jpeg',data:imageB64}});
+    messages[0].content.push({type:'text',text:extractPrompt});
+  } else {
+    messages[0].content.push({type:'text',text:extractPrompt+'\n\nDOCUMENTO:\n'+textContent});
+  }
+
+  const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages})});
+  if(!res.ok)throw new Error('API error');
+  const d=await res.json();
+  const txt=d.content.map(b=>b.text||'').join('').replace(/```json|```/g,'').trim();
+
+  let extracted={};
+  try{extracted=JSON.parse(txt);}catch(e){
+    // Fallback: just use as briefing text
+    extraText=textContent||'';
+    document.getElementById('ai-reading').style.display='none';
+    document.getElementById('btn-onb-next').disabled=false;
+    document.getElementById('btn-onb-next').textContent='Continuar →';
+    showT('Documento carregado. Preenche os campos manualmente.');
+    onbN(2);
+    return;
+  }
+
+  // Auto-advance and fill fields
+  onbN(2);
+  document.getElementById('ai-reading').style.display='none';
+  document.getElementById('btn-onb-next').disabled=false;
+  document.getElementById('btn-onb-next').textContent='Continuar →';
+
+  const badge=document.getElementById('ai-filled-badge');if(badge)badge.style.display='block';
+
+  if(extracted.name)setV('b-name',extracted.name);
+  if(extracted.niche)setV('b-niche',extracted.niche);
+  if(extracted.tagline)setV('b-tg',extracted.tagline);
+  if(extracted.audience)setV('b-aud',extracted.audience);
+  if(extracted.voice)setV('b-voice',extracted.voice);
+  if(extracted.values)setV('b-vals',extracted.values);
+  if(extracted.vocabulary_use)setV('b-vu',extracted.vocabulary_use);
+  if(extracted.vocabulary_avoid)setV('b-va',extracted.vocabulary_avoid);
+  if(extracted.briefing_summary)extraText=extracted.briefing_summary;
+
+  showT('✦ Campos preenchidos automaticamente pela IA');
+}
+
+function handleDropAI(e){e.preventDefault();document.getElementById('ua').classList.remove('drag');const dt=new DataTransfer();[...e.dataTransfer.files].forEach(f=>dt.items.add(f));document.getElementById('b-files').files=dt.files;procFilesAI(document.getElementById('b-files'));}
+
+async function procFiles(inp){
+  const fl=document.getElementById('fl');
+  for(const f of inp.files){
+    const b=document.createElement('span');b.style.cssText='background:rgba(43,92,86,.15);border:1px solid rgba(43,92,86,.3);border-radius:20px;padding:3px 10px;font-size:11px';b.textContent='📎 '+f.name;fl.appendChild(b);
+    if(f.type==='text/plain'||f.name.endsWith('.md')){const t=await f.text();extraText+='\n\n---'+f.name+'---\n'+t;}
+  }
+}
+function handleDrop(e){e.preventDefault();document.getElementById('ua').classList.remove('drag');const dt=new DataTransfer();[...e.dataTransfer.files].forEach(f=>dt.items.add(f));document.getElementById('b-files').files=dt.files;procFilesAI(document.getElementById('b-files'));}
+async function saveBrand(){
+  const name=document.getElementById('b-name')?.value.trim();if(!name){showT('Dá um nome à marca.');return;}
+  const quickBrf=document.getElementById('b-brf-quick')?.value||'';
+  const brf=quickBrf+'\n'+extraText;
+  const data={user_id:USER.id,name,niche:g('b-niche'),tagline:g('b-tg'),audience:g('b-aud'),voice:g('b-voice'),values:g('b-vals'),vocabulary_use:g('b-vu'),vocabulary_avoid:g('b-va'),briefing_text:brf};
+  const {data:r,error}=await sb.from('brands').insert(data).select().single();
+  if(error){showT('Erro: '+error.message);return;}
+  BRAND=r;BRANDS.push(r);updBrandUI();buildMarca();showT('Marca guardada.');go('dash');
+  extraText='';pdfBase64Data=null;
+}
+function newBrand(){
+  const w=document.getElementById('marca-wrap');
+  w.innerHTML=`<div style="max-width:600px">
+    <div class="onb-title">Nova marca</div><div class="onb-desc">Dados da nova marca ou cliente.</div>
+    <div class="r2"><div><label class="lbl">Nome</label><input type="text" id="b-name" /></div><div><label class="lbl">Nicho</label><input type="text" id="b-niche" /></div></div>
+    <div class="r1"><label class="lbl">Tagline</label><input type="text" id="b-tg" /></div>
+    <div class="r1"><label class="lbl">Público-alvo</label><textarea id="b-aud"></textarea></div>
+    <div class="r1"><label class="lbl">Tom de voz</label><textarea id="b-voice"></textarea></div>
+    <div class="r2"><div><label class="lbl">Usar</label><textarea id="b-vu" style="min-height:65px"></textarea></div><div><label class="lbl">Evitar</label><textarea id="b-va" style="min-height:65px"></textarea></div></div>
+    <div class="r1"><label class="lbl">Briefing</label><textarea id="b-brf" style="min-height:100px"></textarea></div>
+    <div class="btn-row"><button class="btn btn-o" onclick="buildMarca()">Cancelar</button><button class="btn btn-p" onclick="saveBrand()">Guardar</button></div>
+  </div>`;
+}
+async function selBrand(id){BRAND=BRANDS.find(b=>b.id===id);updBrandUI();buildMarca();closeModal('brand');showT('Marca: '+BRAND.name);}
+function openBrandModal(){
+  if(BRANDS.length===0){go('marca');return;}
+  let html='<div style="display:flex;flex-direction:column;gap:7px">';
+  BRANDS.forEach(b=>{html+=`<div style="background:rgba(255,255,255,.04);border:1px solid ${BRAND?.id===b.id?'var(--green)':'var(--border)'};border-radius:8px;padding:12px 14px;cursor:pointer;transition:all .15s" onclick="selBrand('${b.id}')"><div style="font-size:13.5px;font-weight:500;margin-bottom:2px">${b.name}</div><div style="font-size:11.5px;color:var(--muted)">${b.niche||''}</div></div>`;});
+  document.getElementById('brand-mc').innerHTML=html+'</div>';
+  openModal('brand');
+}
+
+// TEMAS BLOCKS
+const TCFG={post:{lbl:'Ideias de Post',p:'autoridade e posicionamento',f:'post de instagram'},stories:{lbl:'Ideias de Stories',p:'relacionamento e humanização',f:'stories'},carrossel:{lbl:'Ideias de Carrossel',p:'educação e valor',f:'carrossel'},reel:{lbl:'Ideias de Reel',p:'posicionamento e alcance',f:'reel'},newsletter:{lbl:'Ideias de Newsletter',p:'narrativa pessoal',f:'newsletter'},formatos:{lbl:'Ideias Criativas',p:'criativo e viral',f:'tweet e formatos digitais'},funil:{lbl:'Ideias de Funil',p:'conversão e captação',f:'conteúdo de funil'},plano:{lbl:'Temas da Semana',p:'estratégia editorial',f:'plano editorial'}};
+function setupTemas(){
+  Object.keys(TCFG).forEach(pid=>{
+    const el=document.getElementById('temas-'+pid);if(!el)return;
+    const cfg=TCFG[pid];
+    el.innerHTML=`<div class="temas-block"><div class="tb-hd"><div class="tb-hd-t"><strong>${cfg.lbl}</strong> — personalizadas para o teu nicho</div><div style="display:flex;gap:6px"><button class="btn btn-g btn-sm" onclick="genTemas('${pid}')">✦ Gerar</button><button class="btn btn-o btn-sm" onclick="genTemas('${pid}')">↻ Novos</button></div></div><div class="tb-body" id="tb-${pid}"><div class="temas-empty">Clica em "Gerar" para ideias adaptadas à tua marca.</div></div></div>`;
+  });
+}
+async function genTemas(pid){
+  const cfg=TCFG[pid];const b=document.getElementById('tb-'+pid);
+  b.innerHTML='<div class="temas-empty" style="font-style:italic">A gerar ideias para o teu nicho...</div>';
+  const prompt=`${brandCtx()}${oCtx()}\n\nGera exactamente 8 ideias de conteúdo para esta marca.\nPilar: ${cfg.p}\nFormato: ${cfg.f}\n\nResponde EXACTAMENTE assim:\nIDEIA: [título 6-12 palavras, específico para o nicho]\nHOOK: [hook 1 linha na voz da marca]\n---\n\nEspecífico para o nicho. Diferente entre si. Zero genérico.`;
+  try{
+    const txt=await callAPI(prompt,700);
+    const blocos=txt.split(/---+/).filter(bl=>bl.includes('IDEIA:'));
+    const temas=blocos.map(bl=>{const ti=bl.match(/IDEIA:\s*(.+)/i);const ho=bl.match(/HOOK:\s*(.+)/i);return{titulo:(ti?ti[1]:'').trim(),hook:(ho?ho[1]:'').trim()};}).filter(t=>t.titulo);
+    if(temas.length===0){b.innerHTML='<div class="temas-empty">Erro. Tenta novamente.</div>';return;}
+    b.innerHTML='';
+    temas.forEach(t=>{
+      const el=document.createElement('div');el.className='tema-item';
+      el.innerHTML=`<div class="tema-info"><div class="tema-title">${t.titulo}</div><div class="tema-hook">${t.hook}</div></div><div class="tema-actions"><div class="tema-use" onclick="useTema('${encodeURIComponent(t.titulo)}','${pid}')">Usar</div><div class="tema-fav" onclick="togFav(this,'${encodeURIComponent(t.titulo)}','${encodeURIComponent(t.hook)}','${cfg.p}','${pid}')">♡</div></div>`;
+      b.appendChild(el);
+    });
+  }catch(e){b.innerHTML='<div class="temas-empty">Erro: '+e.message+'</div>';}
+}
+function useTema(t,pid){
+  const title=decodeURIComponent(t);
+  const m={post:'p-tema',carrossel:'c-tema',reel:'r-tema',stories:'s-tema',newsletter:'n-tema',formatos:'fmt-tema',funil:'fl-ctx',plano:'pl-tema'};
+  if(m[pid])setV(m[pid],title);
+  document.querySelector('.panel')?.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+async function togFav(el,t,h,cat,sec){
+  const title=decodeURIComponent(t);const hook=decodeURIComponent(h);
+  if(el.classList.contains('saved')){el.classList.remove('saved');el.textContent='♡';}
+  else{await savFav(title,hook,cat,sec);el.classList.add('saved');el.textContent='♥';}
+}
+
+// FUNIL INFO
+const FI={topo:{w:'<strong>Quando usar:</strong> Para alcançar pessoas novas. Usa no início da semana e sempre que queres crescer. O Topo é sobre dar valor sem pedir nada em troca — posts educativos, reels de alcance.',lbl:'Topo'},meio:{w:'<strong>Quando usar:</strong> Depois de já teres seguidores ou pessoas que interagiram. O Meio constrói confiança. Stories de bastidores, newsletters, conteúdo que humaniza a marca.',lbl:'Meio'},fundo:{w:'<strong>Quando usar:</strong> Quando a tua audiência já te conhece e confia. O Fundo é para converter em clientes. Usa quando tens uma oferta, uma vaga ou um serviço disponível.',lbl:'Fundo'},pos:{w:'<strong>Quando usar:</strong> Depois de fechar clientes. O Pós-Venda gera referências e fidelização. A maioria ignora esta fase — é onde mora o crescimento sustentável.',lbl:'Pós-Venda'}};
+function selFL(e,el){document.querySelectorAll('.fs-f').forEach(s=>s.classList.remove('af'));el.classList.add('af');const fi=FI[e];const iEl=document.getElementById('funil-info');iEl.innerHTML=fi.w;iEl.classList.add('vis');document.getElementById('fl-gt').textContent='Gerar — '+fi.lbl;setV('fl-etapa',e);}
+
+// NARRATIVAS
+const narrD={antec:[{t:'Ponta Solta',tag:'Curiosidade',d:'Deixas uma ponta solta e resolves 24h depois. Como o fim de um episódio de série.'},{t:'Micro Movimentos',tag:'Pertença',d:'Convocas a audiência para um movimento colectivo.'},{t:'História de Case',tag:'Prova Social',d:'Começas com um dia normal e introduzes um feedback inesperado.'},{t:'Gargalo',tag:'Problema+Solução',d:'Identificas o maior problema do nicho. Aprofundas. Apresentas soluções — mas não todas de vez.'}],aspir:[{t:'Senso de Pertencimento',tag:'Tribo',d:'Crias comunidade exclusiva. "Sendo uma X, é isto que acontece."'},{t:'Ascensão de Marca',tag:'Jornada',d:'"Comecei assim. Hoje estou aqui." Antes e depois.'},{t:'Nós Contra Eles',tag:'Polarização',d:'Defines o antagonismo. A tua tribo como o caminho certo.'},{t:'Possibilidade',tag:'Transformação',d:'"Por muito tempo acreditei nisso também." A tua jornada que ela pode viver.'}],autor:[{t:'Poder de Dar Poder',tag:'Conversação',d:'Abres um tema. A audiência fala. A tua perspectiva vem no dia seguinte.'},{t:'Ancoragem',tag:'Valor',d:'Mostras um resultado. Perguntas o que vale. O preço real quebra expectativas.'},{t:'Posicionamento',tag:'Diferenciação',d:'Defines o que nunca vais ensinar — e por que o teu caminho é diferente.'},{t:'Antagonismo',tag:'Convicção',d:'Defines o que não aceitas no teu mercado.'}],venda:[{t:'Venda de Serviço',tag:'Serviços',d:'Identificação com a dor. A história da cliente ideal. O que resolves. O convite.'},{t:'Venda de Mentoria',tag:'Mentoria',d:'Retomada ao passado. Ponto de viragem. O programa. Para quem é.'},{t:'Venda de Infoproduto',tag:'Produto Digital',d:'Do problema ao método. O diferencial. Prova de que funciona.'}]};
+let nCat='antec';
+function buildNarr(cat){
+  const p=document.getElementById('nc-panels');p.innerHTML='';
+  narrD[cat].forEach(n=>{const el=document.createElement('div');el.className='ncard';el.innerHTML=`<div class="ncard-hd" onclick="this.parentNode.classList.toggle('open')"><div class="ncard-t">${n.t}</div><div class="ncard-tag">${n.tag}</div></div><div class="ncard-b">${n.d}<button class="nbtn" onclick="useNarr('${n.t}','${cat}')">Gerar esta sequência →</button></div>`;p.appendChild(el);});
+}
+function useNarr(t,cat){go('stories');setV('s-tema',t);setV('s-ctx','Narrativa de '+t+'. '+narrD[cat].find(n=>n.t===t)?.d);}
+function sNC(cat,el){document.querySelectorAll('.nc-item').forEach(c=>c.classList.remove('active'));el.classList.add('active');nCat=cat;buildNarr(cat);}
+(()=>{const t=document.getElementById('nc-tabs');[['antec','Antecipação'],['aspir','Aspiração'],['autor','Autoridade'],['venda','Venda']].forEach(([c,l],i)=>{const el=document.createElement('div');el.className='nc-item'+(i===0?' active':'');el.onclick=()=>sNC(c,el);el.textContent=l;t.appendChild(el);});})();
+buildNarr('antec');
+
+// 60 IDEIAS
+const i60={edu:['1. Checklist prático para iniciantes','2. "O que eu faria se..." — caso do nicho','3. Carrossel contra-intuitivo','4. Resposta de perguntas frequentes','5. Passo a passo simplificado','6. O que NÃO deves fazer','7. Analogias que simplificam','8. Carrossel dúvida + resposta','9. Dica rápida em 60s','10. O indispensável para X','11. Guia Start Rápido','12. O que é e por que importa','13. Bónus rápido','14. Como eu fazia antes vs. agora','15. Live Q&A'],ativ:['16. Frase de impacto','17. Contradição com título chamativo','18. Manifesto da minha causa','19. Slogan em acção','20. Quebra de objecções','21. Análise crítica de tendências','22. Levanta a tua bandeira','23. Conscientização','24. A minha sincera opinião sobre X','25. Verdades sobre o nicho','26. Collab estratégico','27. Desafio de engajamento','28. Por trás das estatísticas','29. Faz parte do movimento','30. Stop the scroll'],asp:['31. Frases e slogans','32. História de superação','33. Bastidores reais','34. Ponto inicial → conquista actual','35. Testemunhos de clientes','36. Conquistas e metas','37. Minha vida há X anos vs. hoje','38. 5 motivos que me fizeram X','39. Reel reflexivo','40. Momento de autoridade','41. Como me desconecto','42. Reflexões do fim de semana','43. A tua vitória desta semana','44. 1 ano atrás vs. agora','45. Entrevista inspiradora'],conv:['46. O que vem aí!','47. Carrossel da oferta','48. Contagem regressiva','49. Save the date','50. Captação em carrossel','51. Reel de lançamento','52. Prova social','53. Bónus exclusivos','54. Email + post alinhados','55. Testemunho em vídeo','56. Live de apresentação','57. Por dentro do produto/serviço','58. Q&A do lançamento','59. Desconto relâmpago','60. Última chamada (escassez)']};
+function bBC(cat){const c=document.getElementById('bc-list');c.innerHTML='';i60[cat].forEach(i=>{const el=document.createElement('div');el.className='iitem';el.onclick=()=>{setV('bc-ideia',i);document.getElementById('bc-gt').textContent='Gerar: '+i;};el.innerHTML=`<div class="iitem-n">${cat.toUpperCase()}</div><div class="iitem-t">${i}</div>`;c.appendChild(el);});}
+function fBC(cat,el){document.querySelectorAll('.bc-cat').forEach(c=>c.classList.remove('s'));el.classList.add('s');bBC(cat);}
+bBC('edu');
+
+// DESAFIOS
+const d21=[{d:1,o:'Antecipação',dc:'Despertar curiosidade. Não dás detalhes.'},{d:2,o:'Manifesto Emocional',dc:'O teu posicionamento e causa.'},{d:3,o:'Erro Comum',dc:'O erro do nicho que custa caro.'},{d:4,o:'Mito VS Verdade',dc:'Quebras uma crença.'},{d:5,o:'Checklist Rápido',dc:'Valor imediato.'},{d:6,o:'Reflexão Provocativa',dc:'Afirmação que divide opiniões.'},{d:7,o:'Narrativa de Dor',dc:'"Eu era assim até que..."'},{d:8,o:'Quebra de Mito (fundo)',dc:'Consequências reais do mito.'},{d:9,o:'Comparação Estratégica',dc:'Estratégico vs. mercado comum.'},{d:10,o:'Bastidor Educativo',dc:'O que acontece antes do resultado.'},{d:11,o:'Lista Prática',dc:'Ferramentas ou passos reais.'},{d:12,o:'Sinais de Erro',dc:'Como saber que está errado.'},{d:13,o:'Reflexão Curta',dc:'Uma frase de posicionamento.'},{d:14,o:'Sinais de Progresso',dc:'Reconheces quem está no caminho.'},{d:15,o:'Método em Passos',dc:'O teu processo revelado.'},{d:16,o:'O Não que Mudou Tudo',dc:'Uma recusa que te fez crescer.'},{d:17,o:'Bastidor de Autoridade',dc:'Resultados são processo.'},{d:18,o:'Prova Social',dc:'Antes → Depois.'},{d:19,o:'Movimento Colectivo',dc:'Um padrão que se repete.'},{d:20,o:'Benefícios Ocultos',dc:'O que não espera ganhar.'},{d:21,o:'Oferta Directa',dc:'O convite claro.'}];
+const dS=[{d:'S1',o:'Reel de Posicionamento',dc:'45s que definem quem és.'},{d:'S1',o:'Carrossel de Autoridade',dc:'Educa. Guarda-se.'},{d:'S2',o:'Collab',dc:'Com alguém da tua audiência.'},{d:'S2',o:'Reel de Contraste',dc:'Antes vs. Depois.'},{d:'S3',o:'Desafio de Engajamento',dc:'Convidas a audiência.'}];
+const dD=[{d:'D1',o:'Caixinha de Perguntas',dc:'Resposta directa.'},{d:'D2',o:'Enquete Provocadora',dc:'Pergunta fácil.'},{d:'D3',o:'CTA no Post',dc:'"Conta-me nos comentários."'},{d:'D4',o:'Story de Gargalo',dc:'Nomeia o problema.'},{d:'D5',o:'Diagnóstico',dc:'"Responde e digo-te o próximo passo."'}];
+const dW=[{d:'S1',o:'Rotina de Criação',dc:'Processo sem pressão.'},{d:'S1',o:'Reflexão Pessoal',dc:'Insight de pausa.'},{d:'S2',o:'O que não aceitas',dc:'Limites como posicionamento.'},{d:'S3',o:'Gratidão',dc:'Reconhecer o caminho.'}];
+function bDg(gid,data){const c=document.getElementById(gid);if(!c)return;c.innerHTML='';data.forEach(dia=>{const el=document.createElement('div');el.className='ditem';el.onclick=()=>{setV('d-dia',dia.d+' — '+dia.o);document.getElementById('d-gen-t').textContent='Gerar: '+dia.o;document.getElementById('d-lbl').textContent=dia.o;};el.innerHTML=`<div class="ditem-n">${dia.d}</div><div class="ditem-o">${dia.o}</div><div class="ditem-d">${dia.dc}</div>`;c.appendChild(el);});}
+bDg('dg-s1',d21.slice(0,7));bDg('dg-s2',d21.slice(7,14));bDg('dg-s3',d21.slice(14));bDg('dg-seg',dS);bDg('dg-dms',dD);bDg('dg-well',dW);
+function sD(id,el){document.querySelectorAll('.dtab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.dp').forEach(p=>p.classList.remove('active'));el.classList.add('active');document.getElementById('dp-'+id).classList.add('active');}
+
+// FASE RETORNO
+const fD=[
+  {desc:'<strong>F0 — Fundação:</strong> Antes de publicar qualquer coisa, garante que o perfil, a marca e o sistema estão definidos. Objectivo: clareza sobre quem és, para quem falas e o que fazes de diferente.',cards:[{ic:'◻',t:'Post de Apresentação',d:'Declaração de quem és — não desculpa pela ausência.',tag:'Semana 1',s:'post'},{ic:'◑',t:'Stories de Contexto',d:'Humanizar o regresso. Bastidores, não resultado.',tag:'Semana 1',s:'stories'},{ic:'✉',t:'Newsletter de Regresso',d:'A carta mais honesta.',tag:'Semana 1',s:'newsletter'}]},
+  {desc:'<strong>F1 — Primeiras Raízes:</strong> 10 peças publicadas + 5 conversas iniciadas. Objectivo: primeiros sinais de presença e testar o que ressoa.',cards:[{ic:'⊞',t:'Carrossel de Autoridade',d:'O método em slides. Educa. Posiciona.',tag:'Semana 2',s:'carrossel'},{ic:'▶',t:'Reel de Posicionamento',d:'45s que definem a categoria.',tag:'Semana 2',s:'reel'}]},
+  {desc:'<strong>F2 — Primeira Prova:</strong> Proposta + caso de estudo. Objectivo: credibilidade documentada antes do primeiro cliente.',cards:[{ic:'◻',t:'Post de Prova',d:'Resultados e bastidores reais.',tag:'Semana 3',s:'post'},{ic:'⊞',t:'Carrossel do Método',d:'O processo passo a passo.',tag:'Semana 3',s:'carrossel'}]},
+  {desc:'<strong>F3 — Captação:</strong> Fechar o primeiro cliente. O conteúdo serve directamente a conversão.',cards:[{ic:'◑',t:'Stories de Captação',d:'Abres 1 vaga. Quem reconhece o valor, avança.',tag:'Semana 4',s:'stories'},{ic:'▶',t:'Reel de Conversão',d:'A transformação que o cliente vai ter.',tag:'Semana 4',s:'reel'}]}
+];
+function sF(i,el){
+  document.querySelectorAll('.fase-s').forEach(s=>s.classList.remove('af'));el.classList.add('af');
+  document.getElementById('fase-info').innerHTML=fD[i].desc;
+  const gc=document.getElementById('fase-cards');gc.innerHTML='';
+  fD[i].cards.forEach(c=>{const d=document.createElement('div');d.className='card';d.onclick=()=>go(c.s);d.innerHTML=`<div class="c-ic">${c.ic}</div><div class="c-t">${c.t}</div><div class="c-d">${c.d}</div><div class="c-tag">${c.tag}</div>`;gc.appendChild(d);});
+}
+sF(0,document.querySelector('.fase-s'));
+
+// FORMATOS
+const fmts=[{id:'twitter',lbl:'𝕏 Tweet',d:'Máx 280 chars. Uma ideia, impacto imediato.'},{id:'linkedin',lbl:'LinkedIn',d:'Hook na 1ª linha. CTA para comentário. 150-300 palavras.'},{id:'thread',lbl:'Thread',d:'5-7 tweets encadeados. Cada um = uma ideia.'},{id:'minimalista',lbl:'Minimalista',d:'Uma frase. Máx 15 palavras. Para slide de impacto.'},{id:'editorial',lbl:'Editorial',d:'3-5 frases estilo revista premium.'},{id:'citacao',lbl:'Citação',d:'Frase memorável com atribuição da marca.'},{id:'dm',lbl:'Proposta DM',d:'3-4 frases. Termina com pergunta aberta.'},{id:'bio',lbl:'Bio',d:'3 linhas. Quem és, para quem, e CTA.'}];
+(()=>{const t=document.getElementById('fmt-tabs');fmts.forEach((f,i)=>{const el=document.createElement('div');el.className='dtab'+(i===0?' active':'');el.onclick=()=>{document.querySelectorAll('#fmt-tabs .dtab').forEach(d=>d.classList.remove('active'));el.classList.add('active');fmtAtual=f.id;document.getElementById('fmt-desc').textContent=f.d;document.getElementById('fmt-ph-t').textContent='Gerar: '+f.lbl;document.getElementById('out-fmt-lbl').textContent=f.lbl+' · gerado';};el.textContent=f.lbl;t.appendChild(el);});document.getElementById('fmt-desc').textContent=fmts[0].d;})();
+
+// LAYOUT BUILDER
+let slides=[],curIdx=0,sty='minimal',rat='sq',bLogo=null,fontM='Cormorant Garamond',texCur=null,gradCur=null;
+const RATS={sq:{w:540,h:540},pt:{w:540,h:675},st:{w:540,h:960}};
+const FNTS=['Cormorant Garamond','Playfair Display','Space Grotesk','DM Sans'];
+const GRADS=[null,['#0D2422','#1C3D3A'],['#3D2B1C','#2B1C0D'],['#1A1A2E','#16213E'],['#1A1A1A','#2D2D2D']];
+const TEXS=['none','dots','lines','grain','noise'];
+
+function initBuilder(){
+  let fh='';FNTS.forEach(f=>{fh+=`<div class="font-opt ${fontM===f?'active':''}" onclick="setFont('${f}',this)"><div class="font-opt-n">${f}</div><div class="font-opt-p" style="font-family:'${f}',serif">Aa Bb Cc</div></div>`;});
+  document.getElementById('fonts-main').innerHTML=fh;
+  let gh='';GRADS.forEach((g,i)=>{gh+=`<div style="height:26px;border-radius:4px;cursor:pointer;border:2px solid ${i===0?'var(--green)':'transparent'};background:${g?`linear-gradient(135deg,${g[0]},${g[1]})`:'rgba(255,255,255,.04)'};transition:border-color .15s" onclick="setGrad(${i},this)" title="${g?'Degradê':'Nenhum'}"></div>`;});
+  document.getElementById('grad-g').innerHTML=gh;
+  let th='';TEXS.forEach((t,i)=>{th+=`<div class="tex-opt ${i===0?'active':''}" onclick="setTex('${t}',this)" style="background:rgba(255,255,255,.${3+i});border-color:${i===0?'var(--green)':'transparent'}" title="${t}"></div>`;});
+  document.getElementById('tex-g').innerHTML=th;
+  ['c-bg','c-tx','c-ac'].forEach(id=>{document.getElementById(id).addEventListener('input',function(){document.getElementById(id+'-h').value=this.value;uCv();});});
+  addSlide();
+}
+
+function togBLS(id){document.getElementById('bls-'+id).classList.toggle('open');}
+function setSty(s,el){document.querySelectorAll('.style-opt').forEach(o=>o.classList.remove('active'));el.classList.add('active');sty=s;uCv();}
+function setRat(r,el){document.querySelectorAll('.ratio-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');rat=r;uCv();}
+function setFont(f,el){document.querySelectorAll('.font-opt').forEach(o=>o.classList.remove('active'));el.classList.add('active');fontM=f;uCv();}
+function setTex(t,el){document.querySelectorAll('.tex-opt').forEach(o=>{o.classList.remove('active');o.style.borderColor='transparent';});el.classList.add('active');el.style.borderColor='var(--green)';texCur=t;uCv();}
+function setGrad(i,el){document.querySelectorAll('#grad-g > div').forEach(o=>o.style.borderColor='transparent');el.style.borderColor='var(--green)';gradCur=GRADS[i];uCv();}
+function syncC(id,val){document.getElementById(id).value=val;document.getElementById(id+'-h').value=val;uCv();}
+
+function addSlide(){
+  slides.push({main:'',sub:'',foto:null,fop:40,pos:'bl',sz:48});
+  const idx=slides.length-1;
+  const strip=document.getElementById('strip');
+  const add=strip.querySelector('.strip-add');
+  const item=document.createElement('div');item.className='strip-item'+(idx===0?' active':'');item.id='si-'+idx;item.onclick=()=>selSlide(idx);
+  item.innerHTML=`<canvas id="th-${idx}" width="58" height="58"></canvas>`;
+  strip.insertBefore(item,add);
+  selSlide(idx);uCv();
+}
+function selSlide(idx){
+  curIdx=idx;document.querySelectorAll('.strip-item').forEach((el,i)=>el.classList.toggle('active',i===idx));
+  document.getElementById('cur-n').textContent=idx+1;document.getElementById('tot-n').textContent=slides.length;
+  const s=slides[idx];
+  setV('bl-txt-main',s.main);setV('bl-txt-sub',s.sub);setV('bl-sz',s.sz);document.getElementById('bl-fop').value=s.fop||40;
+  if(s.foto){document.getElementById('bl-foto-p').src=s.foto;document.getElementById('bl-foto-pw').style.display='block';document.getElementById('bl-foto-drop').style.display='none';}
+  else{document.getElementById('bl-foto-pw').style.display='none';document.getElementById('bl-foto-drop').style.display='block';}
+  document.querySelectorAll('.pos-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelector(`.pos-btn[onclick*="'${s.pos||'bl'}']`)?.classList.add('active');
+  uCv();
+}
+function upCurSlide(){if(!slides[curIdx])return;const s=slides[curIdx];s.main=g('bl-txt-main');s.sub=g('bl-txt-sub');s.sz=parseInt(g('bl-sz')||48);s.fop=parseInt(document.getElementById('bl-fop').value);uCv();}
+function setPos(p,el){document.querySelectorAll('.pos-btn').forEach(b=>b.classList.remove('active'));el.classList.add('active');slides[curIdx].pos=p;uCv();}
+function adjSz(d){const c=parseInt(g('bl-sz')||48);setV('bl-sz',Math.max(14,Math.min(120,c+d)));upCurSlide();}
+function loadSFoto(inp){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{slides[curIdx].foto=e.target.result;document.getElementById('bl-foto-p').src=e.target.result;document.getElementById('bl-foto-pw').style.display='block';document.getElementById('bl-foto-drop').style.display='none';uCv();};r.readAsDataURL(f);}
+function rmFoto(){slides[curIdx].foto=null;document.getElementById('bl-foto-pw').style.display='none';document.getElementById('bl-foto-drop').style.display='block';uCv();}
+function loadLogo(inp){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{bLogo=e.target.result;document.getElementById('b-logo-p').src=e.target.result;document.getElementById('b-logo-p').style.display='block';uCv();};r.readAsDataURL(f);}
+function dupSlide(){const s=JSON.parse(JSON.stringify(slides[curIdx]));slides.splice(curIdx+1,0,s);rebuildStrip();selSlide(curIdx+1);}
+function delSlide(){if(slides.length===1){showT('Precisas de pelo menos 1 slide.');return;}slides.splice(curIdx,1);rebuildStrip();selSlide(Math.min(curIdx,slides.length-1));}
+function rebuildStrip(){const strip=document.getElementById('strip');const add=strip.querySelector('.strip-add');strip.querySelectorAll('.strip-item').forEach(el=>el.remove());slides.forEach((_,idx)=>{const item=document.createElement('div');item.className='strip-item';item.id='si-'+idx;item.onclick=()=>selSlide(idx);item.innerHTML=`<canvas id="th-${idx}" width="58" height="58"></canvas>`;strip.insertBefore(item,add);});}
+
+function uCv(){
+  const ratio=RATS[rat];const cv=document.getElementById('main-cv');cv.width=ratio.w;cv.height=ratio.h;
+  const s=slides[curIdx]||{main:'',sub:'',pos:'bl',sz:48};
+  const opts={bg:document.getElementById('c-bg').value,tx:document.getElementById('c-tx').value,ac:document.getElementById('c-ac').value,marca:g('b-marca')||'',sty,font:fontM,tex:texCur,grad:gradCur,logo:bLogo};
+  drawSlide(cv,s,opts);
+  const th=document.getElementById('th-'+curIdx);if(th){const ctx2=th.getContext('2d');ctx2.drawImage(cv,0,0,th.width,th.height);}
+}
+
+function drawSlide(cv,slide,opts){
+  const {bg,tx,ac,marca,sty,font,tex,grad,logo}=opts;
+  const ctx=cv.getContext('2d');const W=cv.width,H=cv.height;
+  // Background
+  if(grad&&grad.length===2){const grd=ctx.createLinearGradient(0,0,W,H);grd.addColorStop(0,grad[0]);grd.addColorStop(1,grad[1]);ctx.fillStyle=grd;}else ctx.fillStyle=bg;
+  ctx.fillRect(0,0,W,H);
+  // Photo
+  if(slide.foto){const img=new Image();img.src=slide.foto;if(img.complete){const fop=(slide.fop||40)/100;ctx.globalAlpha=fop;const ir=img.width/img.height,cr=W/H;let dx=0,dy=0,dw=W,dh=H;if(ir>cr){dh=H;dw=H*ir;dx=(W-dw)/2;}else{dw=W;dh=W/ir;dy=(H-dh)/2;}ctx.drawImage(img,dx,dy,dw,dh);ctx.globalAlpha=1;const ov=ctx.createLinearGradient(0,H*0.3,0,H);ov.addColorStop(0,'rgba(0,0,0,0.05)');ov.addColorStop(1,'rgba(0,0,0,0.65)');ctx.fillStyle=ov;ctx.fillRect(0,0,W,H);}}
+  // Texture
+  if(tex&&tex!=='none'){const op=parseInt(document.getElementById('tex-op').value)/100*0.25;ctx.globalAlpha=op;ctx.fillStyle=tx;if(tex==='dots'){for(let x=0;x<W;x+=14)for(let y=0;y<H;y+=14){ctx.beginPath();ctx.arc(x,y,0.7,0,Math.PI*2);ctx.fill();}}else if(tex==='lines'){for(let y=0;y<H;y+=9)ctx.fillRect(0,y,W,0.5);}else if(tex==='grain'){for(let i=0;i<2000;i++)ctx.fillRect(Math.random()*W,Math.random()*H,Math.random()*2,Math.random()*2);}ctx.globalAlpha=1;}
+  const pad=W*0.07;const fSz=slide.sz||48;const pos=slide.pos||'bl';
+  ctx.fillStyle=ac;
+  // Layout by style
+  if(sty==='minimal'){ctx.fillRect(pad,H-pad-fSz*3.2,W*0.05,2);drawTxt(ctx,slide.main,pos,pad,W,H,fSz,font,tx);if(slide.sub)drawTxt(ctx,slide.sub,pos,pad,W,H,Math.round(fSz*.38),font,ac,false);}
+  else if(sty==='editorial'){ctx.font=`300 italic ${fSz}px '${font}', serif`;ctx.fillStyle=tx;wrapTxt(ctx,slide.main,pad,H*.3,W-pad*2,fSz*1.35);if(slide.sub){ctx.font=`300 ${Math.round(fSz*.36)}px 'DM Sans',sans-serif`;ctx.fillStyle=ac;wrapTxt(ctx,slide.sub,pad,H*.62,W-pad*2,fSz*.55);}ctx.fillStyle=ac;ctx.fillRect(pad,H*.12,W*.12,1);}
+  else if(sty==='bold'){ctx.font=`700 ${Math.round(fSz*1.1)}px 'Space Grotesk','DM Sans',sans-serif`;ctx.fillStyle=tx;wrapTxt(ctx,(slide.main||'').toUpperCase(),pad,H*.22,W-pad*2,fSz*1.5);ctx.fillRect(pad,H*.14,W*.06,5);if(slide.sub){ctx.font=`300 ${Math.round(fSz*.36)}px 'DM Sans',sans-serif`;ctx.fillStyle=ac;ctx.fillText(slide.sub,pad,H*.8);}}
+  else if(sty==='split'){ctx.fillStyle=ac+'25';ctx.fillRect(0,0,W*.055,H);ctx.fillStyle=ac;ctx.fillRect(W*.055,0,2,H);drawTxt(ctx,slide.main,'ml',W*.09,W*.86,H,fSz,font,tx);}
+  else if(sty==='centered'){ctx.textAlign='center';ctx.font=`300 ${fSz}px '${font}',serif`;ctx.fillStyle=tx;wrapTxtC(ctx,slide.main,W/2,H*.35,W-pad*2,fSz*1.38);ctx.fillStyle=ac;ctx.fillRect(W/2-W*.04,H*.23,W*.08,1.5);if(slide.sub){ctx.font=`300 ${Math.round(fSz*.36)}px 'DM Sans',sans-serif`;ctx.fillStyle=ac;ctx.fillText(slide.sub,W/2,H*.7);}ctx.textAlign='left';}
+  else if(sty==='overlap'){ctx.font=`700 ${Math.round(fSz*2.2)}px 'DM Sans',sans-serif`;ctx.fillStyle=ac+'15';const bw=(slide.main||'').split(' ')[0];if(bw)ctx.fillText(bw.toUpperCase(),pad*.3,H*.6);drawTxt(ctx,slide.main,pos,pad,W,H,fSz,font,tx);}
+  // Brand
+  if(marca){ctx.font=`300 ${Math.round(W*.026)}px 'DM Sans',sans-serif`;ctx.fillStyle=ac;ctx.globalAlpha=.75;if(logo){const li=new Image();li.src=logo;if(li.complete)ctx.drawImage(li,pad,H-pad-W*.045,W*.045,W*.045);}ctx.fillText(marca.toUpperCase(),logo?pad+W*.06:pad,H-pad*.7);ctx.globalAlpha=1;}
+}
+function drawTxt(ctx,text,pos,pad,W,H,fSz,font,color,isTitle=true){
+  if(!text)return;ctx.fillStyle=color;ctx.font=`${isTitle?'300':'400'} ${fSz}px '${font}',${isTitle?'serif':'sans-serif'}`;
+  let x=pad,y;const posT=pos||'bl';
+  if(posT.startsWith('b'))y=H-pad-fSz*(isTitle?0:3.5);else if(posT.startsWith('m'))y=H*.38;else y=H*.18;
+  if(posT.endsWith('c')){ctx.textAlign='center';x=W/2;}else if(posT.endsWith('r')){ctx.textAlign='right';x=W-pad;}else ctx.textAlign='left';
+  wrapTxt(ctx,text,x,y,posT.endsWith('c')?W-pad*2:W-pad-x,fSz*1.32);ctx.textAlign='left';
+}
+function wrapTxt(ctx,text,x,y,mw,lh){if(!text)return;const words=text.split(' ');let line='',cy=y;words.forEach(w=>{const t=line+w+' ';if(ctx.measureText(t).width>mw&&line){ctx.fillText(line.trim(),x,cy);line=w+' ';cy+=lh;}else line=t;});ctx.fillText(line.trim(),x,cy);}
+function wrapTxtC(ctx,text,x,y,mw,lh){if(!text)return;const words=text.split(' ');let line='',cy=y;words.forEach(w=>{const t=line+w+' ';if(ctx.measureText(t).width>mw&&line){ctx.fillText(line.trim(),x,cy);line=w+' ';cy+=lh;}else line=t;});ctx.fillText(line.trim(),x,cy);}
+
+function expAll(){
+  const rat2=RATS[rat];const cv=document.createElement('canvas');cv.width=rat2.w*2;cv.height=rat2.h*2;
+  const bg=document.getElementById('c-bg').value,tx=document.getElementById('c-tx').value,ac=document.getElementById('c-ac').value,marca=g('b-marca')||'';
+  slides.forEach((s,i)=>{cv.width=rat2.w*2;cv.height=rat2.h*2;drawSlide(cv,s,{bg,tx,ac,marca,sty,font:fontM,tex:texCur,grad:gradCur,logo:bLogo});const lk=document.createElement('a');lk.download='slide-'+(i+1)+'.png';lk.href=cv.toDataURL('image/png');lk.click();});
+  showT(slides.length+' slides exportados.');
+}
+function expOne(){
+  const rat2=RATS[rat];const cv=document.createElement('canvas');cv.width=rat2.w*2;cv.height=rat2.h*2;
+  const bg=document.getElementById('c-bg').value,tx=document.getElementById('c-tx').value,ac=document.getElementById('c-ac').value,marca=g('b-marca')||'';
+  drawSlide(cv,slides[curIdx],{bg,tx,ac,marca,sty,font:fontM,tex:texCur,grad:gradCur,logo:bLogo});
+  const lk=document.createElement('a');lk.download='slide-'+(curIdx+1)+'.png';lk.href=cv.toDataURL('image/png');lk.click();showT('Slide exportado.');
+}
+function sendToBuilder(){
+  const content=document.getElementById('ob-carrossel')?.textContent;if(!content)return;
+  go('builder');
+  const lines=content.split('\n');let cur='';const sts=[];
+  lines.forEach(l=>{if(l.match(/^(SLIDE|Slide)\s+\d+/i)){if(cur.trim())sts.push(cur.trim());cur='';}else cur+=l+'\n';});
+  if(cur.trim())sts.push(cur.trim());
+  if(sts.length>0){slides=[];document.querySelectorAll('.strip-item').forEach(el=>el.remove());sts.slice(0,10).forEach((txt,i)=>{slides.push({main:txt.substring(0,80),sub:'',foto:null,fop:40,pos:'bl',sz:48});const strip=document.getElementById('strip');const add=strip.querySelector('.strip-add');const item=document.createElement('div');item.className='strip-item'+(i===0?' active':'');item.id='si-'+i;item.onclick=()=>selSlide(i);item.innerHTML=`<canvas id="th-${i}" width="58" height="58"></canvas>`;strip.insertBefore(item,add);});selSlide(0);showT(sts.length+' slides importados.');}
+}
+
+// API + PROMPTS
+async function callAPI(prompt,maxT=1500){
+  const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:maxT,messages:[{role:'user',content:prompt}]})});
+  if(!res.ok){const e=await res.json();throw new Error(e.error||'Erro '+res.status);}
+  const d=await res.json();return d.content.map(b=>b.text||'').join('');
+}
+function bp(){return `${brandCtx()}${oCtx()}\n\nREGRAS: Adapta TODO ao nicho e voz da marca. Usa o vocabulário indicado. Evita as palavras a evitar. Fala para o público definido. Soa como a marca — não como IA genérica.\nFRAMEWORK: HOOK → ESPELHO → TENSÃO → VIRAGEM → CAMINHO → CTA`;}
+const PROMPTS={
+  post:()=>`${bp()}\n\nGera POST DE INSTAGRAM completo.\nTema:${g('p-tema')} · Hook:${g('p-hook')} · Tom:${g('p-tom')} · Objectivo:${g('p-obj')}\nIdeias:${g('p-ideas')}\n\n[HOOK — máx 10 palavras]\n\n[CORPO — 3-5 parágrafos curtos, prosa]\n[VIRAGEM]\n[FECHO ELEGANTE]\n[CTA — 1 linha confiante]\n\n150-300 palavras. Na voz da marca.`,
+  stories:()=>`${bp()}\n\nCria SEQUÊNCIA 7 STORIES completos.\nTema:${g('s-tema')} · Objectivo:${g('s-obj')} · Contexto:${g('s-ctx')}\n\nPara cada story: NÚMERO · PAPEL · COPY COMPLETO\nS1 HOOK / S2 ESPELHO / S3 TENSÃO / S4 REVELAÇÃO / S5 SOLUÇÃO / S6 PROVA / S7 CTA`,
+  carrossel:()=>`${bp()}\n\nCria CARROSSEL ${g('c-slides')} slides.\nTema:${g('c-tema')} · Pontos:${g('c-pontos')}\n\nSlide 1: CAPA — título máx 8 palavras\nSlides 2-N: TÍTULO CURTO + 2-3 linhas\nSlide final: CTA\nCada slide lê-se em 5 segundos.`,
+  reel:()=>`${bp()}\n\nCria GUIÃO REEL ${g('r-dur')}.\nMensagem:${g('r-tema')} · Contexto:${g('r-ctx')}\n\n[0-3s] HOOK verbal+visual / [3-15s] ESPELHO / [15-Xs] DESENVOLVIMENTO / [X-Ys] INSIGHT / [Y-fim] CTA\n\nFala exacta + [indicações visuais].`,
+  newsletter:()=>`${bp()}\n\nCria NEWSLETTER completa.\nTema:${g('n-tema')} · Tom:${g('n-tom')} · História:${g('n-hist')}\n\nSUBJECT (6-10 palavras) · PREVIEW (1 linha) · ABERTURA · CORPO (4-6 parágrafos) · VIRAGEM · CTA · Assinatura · P.S.\n\n300-600 palavras.`,
+  desafio:()=>`${bp()}\n\nGera conteúdo DESAFIO.\nDia:${g('d-dia')} · Formato:${g('d-fmt')} · Contexto:${g('d-ctx')}\n\nAdapta ao nicho. Conteúdo completo pronto a publicar.`,
+  bc:()=>`${bp()}\n\nGera BRANDED CONTENT adaptado ao nicho.\nIdeia:${g('bc-ideia')} · Formato:${g('bc-fmt')}\nContexto específico:${g('bc-ctx')}\n\nAdapta COMPLETAMENTE ao nicho. Zero genérico.`,
+  funil:()=>`${bp()}\n\nGera conteúdo FUNIL.\nEtapa:${g('fl-etapa')} · Formato:${g('fl-fmt')} · Contexto:${g('fl-ctx')}\n\nTopo=atrair. Meio=confiança. Fundo=converter. Pós-venda=reter.`,
+  plano:()=>`${bp()}\n\nCria PLANO EDITORIAL SEMANAL completo com o COPY PRONTO de cada publicação.\nFase:${g('pl-fase')} · Frequência:${g('pl-freq')} · Tema:${g('pl-tema')||'definir pela fase'}\n\nPara CADA publicação da semana entrega:\n## [DIA] | [HORA] | [FORMATO]\n**Tema:** [tema específico]\n**Objectivo:** [atracção/relacionamento/conversão]\n**Etapa funil:** [topo/meio/fundo]\n\n**COPY COMPLETO:**\n[Escreve o copy completo pronto a copiar e publicar — post, slides, guião ou copy de stories. Não um resumo, o conteúdo real e completo]\n\n---\n\nEntrega o copy real de cada publicação, não resumos. Adapta ao nicho e voz da marca.`,
+  formato:()=>`${bp()}\n\nGera FORMATO: ${fmts.find(f=>f.id===fmtAtual)?.lbl}.\nTema:${g('fmt-tema')||'escolhe o mais relevante'} · Tom:${g('fmt-tom')||'padrão da marca'}\nInstruções: ${fmts.find(f=>f.id===fmtAtual)?.d}\n\nSoa como a marca — na voz específica.`
+};
+
+async function gen(type){
+  const outEl=document.getElementById('out-'+type);const bodyEl=document.getElementById('ob-'+type);if(!outEl||!bodyEl)return;
+  outEl.classList.add('vis');bodyEl.innerHTML='<div class="loading">A criar conteúdo para o teu nicho <div class="dots"><span></span><span></span><span></span></div></div>';
+  try{
+    const text=await callAPI(PROMPTS[type]());bodyEl.textContent=text;
+    const {data:r}=await sb.from('content_history').insert({user_id:USER.id,brand_id:BRAND?.id||null,type,prompt_tema:g(({post:'p-tema',carrossel:'c-tema',reel:'r-tema',stories:'s-tema',newsletter:'n-tema',formato:'fmt-tema',funil:'fl-ctx',plano:'pl-tema',desafio:'d-dia',bc:'bc-ideia'}[type]||'')),generated_content:text,format:type}).select().single();
+    if(r){HIST.unshift(r);document.getElementById('h-badge').textContent=HIST.length;}
+  }catch(e){bodyEl.textContent='Erro: '+e.message;}
+}
+function savHist(type){showT('Conteúdo guardado no histórico.');}
+function clr(t){document.getElementById('out-'+t)?.classList.remove('vis');}
+function cp(t){const el=document.getElementById('ob-'+t);if(el)navigator.clipboard.writeText(el.textContent).then(()=>showT('Copiado.'));}
+
+// NAV
+const PGS={dash:'Dashboard',obj:'Objectivo',hist:'Histórico',favs:'Favoritos',marca:'Configurar Marca',post:'Post Instagram',stories:'Stories',carrossel:'Carrossel',reel:'Reel',newsletter:'Newsletter',formatos:'Formatos Criativos',retorno:'Plano de Retorno',desafios:'Desafios',narrativas:'Narrativas',sessenta:'60 Ideias',funil:'Funil',plano:'Plano Editorial',builder:'Layout Builder'};
+function go(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.nav').forEach(n=>n.classList.remove('active'));
+  const pg=document.getElementById('pg-'+id);if(pg)pg.classList.add('active');
+  document.getElementById('tb-t').textContent=PGS[id]||id;
+  document.querySelectorAll('.nav').forEach(n=>{if(n.getAttribute('onclick')===`go('${id}')`)n.classList.add('active');});
+  window.scrollTo(0,0);
+  if(id==='builder'&&slides.length===0)setTimeout(initBuilder,100);
+}
+
+// UTILS
+function g(id){const el=document.getElementById(id);return el?el.value:'';}
+function setV(id,val){const el=document.getElementById(id);if(el)el.value=val;}
+function showT(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
+
+// HOOKS EXPLANATION
+const hookInfo={
+  'Provocação Silenciosa':'Começa com uma afirmação que levanta questões sem dar a resposta. Cria curiosidade imediata.\nEx: "Há uma coisa que ninguém te diz sobre delegar."',
+  'Afirmação Ousada':'Uma declaração forte que desafia uma crença comum. Divide opiniões — e isso é bom.\nEx: "Não és má gestora. Nunca tiveste sistemas."',
+  'O Espelho':'Descreve exactamente a situação que o teu seguidor vive. Ela lê e pensa "isto sou eu".\nEx: "Se ainda respondes DMs às 23h, lê isto."',
+  'Pergunta que Corta':'Uma pergunta directa que toca numa dor real. Obriga a parar e a pensar.\nEx: "Quando foi a última vez que terminaste antes das 18h?"',
+  'O Contraste':'Mostra dois mundos opostos — o que é vs. o que poderia ser.\nEx: "Toda a gente fala de escalar. Ninguém fala de respirar primeiro."',
+  'A Revelação':'Cria antecipação: há algo importante que vais revelar. A curiosidade obriga a continuar.\nEx: "Aprendi isto da pior maneira possível."'
+};
+function toggleHookInfo(){
+  const el=document.getElementById('hook-info');
+  const isVisible=el.style.display==='block';
+  if(!isVisible){updateHookDesc();el.style.display='block';}
+  else el.style.display='none';
+}
+function updateHookDesc(){
+  const sel=document.getElementById('p-hook')?.value;
+  const desc=hookInfo[sel]||'';
+  const el=document.getElementById('hook-desc');
+  if(el)el.innerHTML=desc.replace(/\n/g,'<br>');
+}
+document.addEventListener('change',e=>{if(e.target.id==='p-hook'&&document.getElementById('hook-info')?.style.display==='block')updateHookDesc();});
+
+// MOBILE MENU
+function initMobile(){
+  if(window.innerWidth>768)return;
+  // Add menu button
+  if(!document.getElementById('mob-menu-btn')){
+    const btn=document.createElement('div');btn.id='mob-menu-btn';btn.className='mob-menu-btn';btn.innerHTML='☰';btn.onclick=toggleMobMenu;document.body.appendChild(btn);
+    const overlay=document.createElement('div');overlay.className='sb-overlay';overlay.onclick=closeMobMenu;document.body.appendChild(overlay);
+  }
+}
+function toggleMobMenu(){document.querySelector('.sb').classList.toggle('open');document.querySelector('.sb-overlay').classList.toggle('open');}
+function closeMobMenu(){document.querySelector('.sb').classList.remove('open');document.querySelector('.sb-overlay').classList.remove('open');}
+window.addEventListener('resize',initMobile);
+document.addEventListener('DOMContentLoaded',initMobile);
+
+// Close mobile menu on nav click
+document.querySelectorAll('.nav').forEach(n=>n.addEventListener('click',()=>{if(window.innerWidth<=768)closeMobMenu();}));
+
+initAuth();
+</script>
+</body>
+</html>
