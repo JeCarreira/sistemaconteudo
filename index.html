@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Content Machine · Entrar</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--mineral:#FAFAF8;--nevoa:#E8F0EF;--floresta:#2B5C56;--profundo:#1C3D3A;--noite:#0D2422;--areia:#C4A882}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'DM Sans',sans-serif;background:var(--noite);color:var(--mineral);min-height:100vh;display:flex;align-items:center;justify-content:center}
+.bg{position:fixed;inset:0;background:radial-gradient(ellipse at 20% 50%,rgba(43,92,86,0.3) 0%,transparent 60%),radial-gradient(ellipse at 80% 20%,rgba(196,168,130,0.1) 0%,transparent 50%);pointer-events:none}
+.wrap{position:relative;z-index:1;width:100%;max-width:420px;padding:24px}
+.logo{text-align:center;margin-bottom:40px}
+.logo-mark{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:400;letter-spacing:.1em;color:var(--mineral)}
+.logo-sub{font-size:10px;letter-spacing:.25em;text-transform:uppercase;color:var(--areia);margin-top:4px;font-weight:300}
+.card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:32px}
+.tabs{display:flex;gap:0;margin-bottom:28px;background:rgba(0,0,0,.2);border-radius:8px;padding:3px}
+.tab{flex:1;padding:9px;text-align:center;font-size:13px;cursor:pointer;border-radius:6px;transition:all .2s;color:rgba(255,255,255,.5);font-weight:300}
+.tab.active{background:var(--floresta);color:var(--mineral)}
+.form-group{margin-bottom:16px}
+label{display:block;font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--areia);margin-bottom:7px;font-weight:400}
+input{width:100%;padding:12px 14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--mineral);outline:none;transition:border-color .2s}
+input:focus{border-color:rgba(43,92,86,.8);background:rgba(255,255,255,.08)}
+input::placeholder{color:rgba(255,255,255,.25)}
+.btn{width:100%;padding:13px;background:var(--floresta);color:var(--mineral);border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:400;cursor:pointer;transition:all .2s;letter-spacing:.04em;margin-top:4px}
+.btn:hover{background:var(--profundo)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.msg{font-size:12.5px;text-align:center;margin-top:14px;min-height:20px;font-weight:300}
+.msg.err{color:#F87171}
+.msg.ok{color:#6BAE8A}
+.divider{display:flex;align-items:center;gap:12px;margin:20px 0}
+.divider span{font-size:11px;color:rgba(255,255,255,.25);white-space:nowrap}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.08)}
+.btn-google{width:100%;padding:12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13.5px;color:rgba(255,255,255,.7);cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:10px}
+.btn-google:hover{background:rgba(255,255,255,.1);color:var(--mineral)}
+.welcome{text-align:center;margin-bottom:24px}
+.welcome h2{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:300;color:var(--mineral);margin-bottom:6px}
+.welcome p{font-size:12.5px;color:rgba(255,255,255,.5);font-weight:300;line-height:1.6}
+.features{display:flex;flex-direction:column;gap:10px;margin-bottom:24px}
+.feature{display:flex;gap:12px;align-items:flex-start;padding:12px;background:rgba(255,255,255,.03);border-radius:8px;border:1px solid rgba(255,255,255,.05)}
+.feature-ic{font-size:18px;flex-shrink:0;margin-top:1px}
+.feature-t{font-size:13px;font-weight:500;color:var(--mineral);margin-bottom:2px}
+.feature-d{font-size:11.5px;color:rgba(255,255,255,.4);font-weight:300;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="bg"></div>
+<div class="wrap">
+  <div class="logo">
+    <div class="logo-mark">Content Machine</div>
+    <div class="logo-sub">Máquina de Conteúdo · Powered by AI</div>
+  </div>
+  <div class="card">
+    <div class="welcome">
+      <h2>A tua máquina de conteúdo.</h2>
+      <p>Carrega a tua marca. Gera conteúdo de alto nível.<br>Tudo guardado, sempre disponível.</p>
+    </div>
+    <div class="features">
+      <div class="feature"><div class="feature-ic">✦</div><div><div class="feature-t">Adaptado ao teu nicho</div><div class="feature-d">Carrega o teu briefing e toda a IA gera conteúdo específico para ti.</div></div></div>
+      <div class="feature"><div class="feature-ic">◈</div><div><div class="feature-t">Layout Builder profissional</div><div class="feature-d">Cria carrosséis com designs diferentes. Exporta em PNG 1080×1080.</div></div></div>
+      <div class="feature"><div class="feature-ic">⊟</div><div><div class="feature-t">Histórico e favoritos</div><div class="feature-d">Tudo guardado. Abre no PC ou telemóvel sem perder nada.</div></div></div>
+    </div>
+    <div class="tabs">
+      <div class="tab active" onclick="setTab('login')">Entrar</div>
+      <div class="tab" onclick="setTab('register')">Criar conta</div>
+    </div>
+    <div id="form-login">
+      <div class="form-group"><label>Email</label><input type="email" id="l-email" placeholder="o.teu@email.com" /></div>
+      <div class="form-group"><label>Password</label><input type="password" id="l-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()" /></div>
+      <button class="btn" onclick="doLogin()" id="btn-login">Entrar</button>
+      <div class="divider"><span>ou</span></div>
+      <button class="btn-google" onclick="doGoogle()">
+        <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z"/></svg>
+        Continuar com Google
+      </button>
+    </div>
+    <div id="form-register" style="display:none">
+      <div class="form-group"><label>Nome</label><input type="text" id="r-name" placeholder="O teu nome" /></div>
+      <div class="form-group"><label>Email</label><input type="email" id="r-email" placeholder="o.teu@email.com" /></div>
+      <div class="form-group"><label>Password</label><input type="password" id="r-pass" placeholder="Mínimo 6 caracteres" /></div>
+      <button class="btn" onclick="doRegister()" id="btn-register">Criar conta</button>
+      <div class="divider"><span>ou</span></div>
+      <button class="btn-google" onclick="doGoogle()">
+        <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z"/></svg>
+        Continuar com Google
+      </button>
+    </div>
+    <div class="msg" id="auth-msg"></div>
+  </div>
+</div>
+<script>
+// SUBSTITUI PELOS TEUS VALORES DO SUPABASE
+const SUPABASE_URL = 'https://fyujoiwgxjmwswetncft.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_aPM6YQ6i7p-NFLIe4QnCYQ_bWwWYpC6';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+sb.auth.getSession().then(({data:{session}})=>{
+  if(session) window.location.href='app.html';
+});
+
+function setTab(t){
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',i===(t==='login'?0:1)));
+  document.getElementById('form-login').style.display=t==='login'?'block':'none';
+  document.getElementById('form-register').style.display=t==='register'?'block':'none';
+  document.getElementById('auth-msg').textContent='';
+}
+function msg(txt,type='err'){const el=document.getElementById('auth-msg');el.textContent=txt;el.className='msg '+type;}
+async function doLogin(){
+  const email=document.getElementById('l-email').value.trim();
+  const pass=document.getElementById('l-pass').value;
+  if(!email||!pass){msg('Preenche email e password.');return;}
+  const btn=document.getElementById('btn-login');btn.disabled=true;btn.textContent='A entrar...';
+  const {error}=await sb.auth.signInWithPassword({email,password:pass});
+  if(error){msg(error.message==='Invalid login credentials'?'Email ou password incorrectos.':error.message);btn.disabled=false;btn.textContent='Entrar';}
+  else window.location.href='app.html';
+}
+async function doRegister(){
+  const name=document.getElementById('r-name').value.trim();
+  const email=document.getElementById('r-email').value.trim();
+  const pass=document.getElementById('r-pass').value;
+  if(!name||!email||!pass){msg('Preenche todos os campos.');return;}
+  if(pass.length<6){msg('A password tem de ter pelo menos 6 caracteres.');return;}
+  const btn=document.getElementById('btn-register');btn.disabled=true;btn.textContent='A criar conta...';
+  const {data,error}=await sb.auth.signUp({email,password:pass,options:{data:{full_name:name}}});
+  if(error){msg(error.message);btn.disabled=false;btn.textContent='Criar conta';}
+  else if(data.user&&!data.session){msg('Verifica o teu email para confirmar a conta.','ok');btn.textContent='Email enviado ✓';}
+  else window.location.href='app.html';
+}
+async function doGoogle(){
+  await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.origin+'/app.html'}});
+}
+</script>
+</body>
+</html>
